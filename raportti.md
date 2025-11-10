@@ -4,6 +4,8 @@ Tässä seminaarityössä tutustun Flask-backendin testaukseen osana Ohjelmistop
 
 **Sisällysluettelo**:
 - [Johdanto](#johdanto)
+- [Testauksen perusteet](#testauksen-perusteet)
+- [Testauksen suunnittelu](#testauksen-suunnittelu)
 - [Lähteet](#lähteet)
 - [Tekoälyn käyttö](#tekoälyn-käyttö-työn-toteutuksessa)
 
@@ -78,6 +80,65 @@ Näin työ toimii paitsi käytännön oppimiskokemuksena myös osana projektin l
 - **GitHub Actions** - GitHubin sisäänrakennettu CI/CD-ympäristö, jonka avulla testit ja muut työnkulut voidaan ajaa automaattisesti koodimuutosten yhteydessä tai esimerkiksi ajastettuna
 - **Allure Report** - työkalu, joka visualisoi testitulokset vuorovaikutteisena HTML-sivuna ja tarjoaa kokonaiskuvan testien tuloksista, kattavuudesta ja kehityksestä ajan myötä
 
+## Testauksen perusteet
+
+Ennen testauksen suunnittelua haluan kerrata lyhyesti keskeiset testauksen periaatteet ja käsitteet. Teoriapohjana hyödynnän Jussi Pekka Kasurisen kirjaa *Ohjelmistotestauksen käsikirja*, johon tutustuin Haaga-Helian Ohjelmistotestauksen kurssilla tänä syksynä.
+
+### Testauksen merkitys
+
+Testaus on keskeinen osa ohjelmistokehitystä, ja sen tarkoituksena on varmistaa, että ohjelmisto **toimii suunnitellusti** ja **täyttää** käyttäjien sekä sidosryhmien **vaatimukset**. Testauksen avulla voidaan havaita vikoja ja puutteita, jotka muuten saattaisivat johtaa ohjelmiston epätoivottuun toimintaan. (Kasurinen, luku 1)
+
+### Testauksen tasot
+
+Kasurisen kirjan (luku 3) mukaan testauksessa voidaan erottaa useita tasoja, jotka kattavat ohjelmiston eri osa-alueita ja tarjoavat eri näkökulmia laadunvarmistukseen.
+
+**Yksikkötestaus** kohdistuu yksittäisen moduulin, funktion tai olion toiminnan varmentamiseen. Testeillä voidaan tarkistaa esimerkiksi erilaisten syötteiden käsittely, raja-arvot ja poikkeustilanteiden hallinta.
+
+**Integraatiotestaus** tarkastelee ohjelmiston eri osien yhteistoimintaa. Sen avulla varmistetaan, että eri moduulit ja rajapinnat kommunikoivat oikein keskenään.
+
+**Järjestelmätestaus** kohdistuu koko järjestelmään, ja sen tarkoituksena on varmistaa, että ohjelmisto toimii kokonaisuutena ja täyttää sille asetetut vaatimukset.
+
+### Testauksen suunnittelu
+
+Kasurisen kirjassa (s. 117-118) kuvataan esimerkkinä **SPACE DIRT** -menetelmän mukaisen **testaussuunnitelman** vaiheet:
+- **S**cope - laajuus: mitä kohteita testataan ja mitä osia ei testata
+- **P**eople - ihmiset: millaista koulutusta testaajilta vaaditaan, mitkä ovat testaajien vastuut
+- **A**pproach - lähestymistapa: mitä testausmenetelmiä käytetään
+- **C**riteria - kriteerit: mitkä ovat testauksen aloitus-, lopetus-, keskeytys- ja jatkamiskriteerit
+- **E**nvironment - ympäristö: millainen testiympäristö testausta varten tulee rakentaa
+- **D**eliverables - tuotokset: mitä testausprosessi tuottaa kehitysprosessin käyttöön
+- **I**ncidentals - satunnaiset: mitä erikoisominaisuuksia tai poikkeuksia testaukseen liittyy
+- **R**isks - riskit: riskit ja niiden torjunta
+- **T**asks - tehtävät: tehtävät, jotka kuuluvat testausprosessiin
+
+Testaussuunnitelman sisältö voi vaihdella projektin ja tilanteen mukaan, joten SPACE DIRT on vain yksi esimerkki. SPACE DIRT ja muut standardien mukaiset testaussuunnitelman sopivat kenties parhaiten suuriin projekteihin - pienemmässä projektissa niitä voi soveltaa poimimalla mukaan oman projektin kannalta keskeiset osa-alueet. Yleensä testaussuunnitelmassa kirjataan ainakin mitä ohjelmasta testataan, missä vaiheessa ja millä menetelmällä (Kasurinen, s.116).
+
+### Testitapaukset
+
+Testaussuunnitelman jälkeen suunnitellaan **testitapaukset**, jotka kuvaavat yksittäisiä työvaiheita tai tapahtumaketjuja, joiden seurauksena järjestelmä suorittaa jonkin tehtävän. Kuvauksessa voidaan mainita esimerkiksi testin vaiheet ja odotettu lopputulos ja mitä testillä halutaan varmistaa.
+
+Hyvien käytäntöjen mukaan testitapauksia tulisi määritellä koko projektin elinkaaren ajan, aina kun tulee uusia ominaisuuksia tai kun havaitaan jokin vika tai ongelma. Testitapaukset kannattaa kohdistaa tunnetusti virhealttiisiin ohjelmiston osiin, kuten uuteen koodiin, ominaisuuteen tai teknologiaan. Testitapauksia voi syntyä paljon, jolloin niitä joudutaan priorisoimaan esimerkiksi **riskikartoituksen** avulla. (Kasurinen, s. 118-121)
+
+Kasurisen (s. 122-123) mukaan testitapausten valintaan on kaksi päämenetelmää:
+- **Suunnitelmalähtöinen testitapausten valinta**: pyritään kattamaan kaikki ohjelmistolle asetetut laatuvaatimukset mahdollisimman kustannustehokkaasti
+- **Riskilähtöinen testitapausten valinta**: keskitytään poistamaan isoimmat ongelmat ja varmistamaan pääominaisuuksien toiminta
+
+### Projektikohtainen pohdinta
+
+Omassa projektissani vaatimusten täyttymisen todentaminen on osittain haasteellista, koska kunnollista vaatimusmäärittelyä ei ole laadittu. Meillä on vain lista käyttäjätarinoita, jotka olemme purkaneet konkreettisiksi tehtäviksi projektitaulussa.
+
+Tämän vuoksi testauksen painopiste on erityisesti sovelluksen **keskeisten toimintojen toimivuuden varmistamisessa ja vikojen löytämisessä**. Samalla testaus toimii välineenä arvioida ratkaisujen ja koodin laatua käytännössä.
+
+Pääpaino tulee olemaan yksikkö- ja integraatiotestauksessa, koska ne sopivat parhaiten projektin laajuuteen ja resursseihin. Järjestelmätestaus, ainakin Kasurisen kirjan määritelmän mukaisesti, olisi vaikea toteuttaa puutteellisten vaatimusmäärittelyjen takiai.
+
+Projektin kokoon ja aikatauluun nähden täysimittainen SPACE DIRT -testaussuunnitelma olisi ylimitoitettu, kuten monet muutkin standardoidut mallit. Käytän sitä kuitenkin inspiraationa oman, kevyemmän testaussuunnitelman laatimisessa, joka keskittyy sovelluksen tärkeimpiin osiin ja riskilähtöiseen priorisointiin.
+
+Näin pystyn yhdistämään teoreettisen viitekehyksen ja käytännön tarpeet tarkoituksenmukaisella tavalla.
+
+## Testaussuunnitelma
+
+
+
 
 ## Lähteet
 - https://flask.palletsprojects.com/en/stable/testing/
@@ -85,6 +146,7 @@ Näin työ toimii paitsi käytännön oppimiskokemuksena myös osana projektin l
 - https://github.com/mongomock/mongomock
 - https://docs.github.com/en/actions
 - https://allurereport.org/docs/
+- Kasurinen, J. 2013. Ohjelmistotestauksen käsikirja. 1. painos. Docendo. Jyväskylä.
 
 
 ## Tekoälyn käyttö työn toteutuksessa
