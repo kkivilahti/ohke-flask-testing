@@ -4,8 +4,22 @@ Tässä seminaarityössä tutustun Flask-backendin testaukseen osana Ohjelmistop
 
 **Sisällysluettelo**:
 - [Johdanto](#johdanto)
+  - [Projektin tausta](#projektin-tausta)
+  - [Seminaarityön tavoitteet](#seminaarityön-tavoitteet)
+  - [Suunnitellut teknologiat](#suunnitellut-teknologiat)
 - [Testauksen perusteet](#testauksen-perusteet)
-- [Testauksen suunnittelu](#testauksen-suunnittelu)
+  - [Testauksen merkitys](#testauksen-merkitys)
+  - [Testauksen tasot](#testauksen-tasot)
+  - [Testauksen suunnittelu](#testauksen-suunnittelu)
+  - [Testitapausten suunnittelu](#testitapausten-suunnittelu)
+  - [Pohdinta](#projektikohtainen-pohdinta)
+- [Testaussuunnitelma](#testauksen-suunnittelu)
+  - [Testauksen tavoite ja laajuus](#testauksen-tavoite-ja-laajuus)
+  - [Testauksen lähestymistapa](#testauksen-lähestymistapa)
+  - [Testauksen kriteerit](#testauksen-kriteerit)
+  - [Testiympäristö](#testiympäristö)
+  - [Testien priorisointi](#testien-priorisointi)
+  - [Testauksen tuotokset](#testauksen-tuotokset)
 - [Lähteet](#lähteet)
 - [Tekoälyn käyttö](#tekoälyn-käyttö-työn-toteutuksessa)
 
@@ -113,7 +127,7 @@ Kasurisen kirjassa (s. 117-118) kuvataan esimerkkinä **SPACE DIRT** -menetelmä
 
 Testaussuunnitelman sisältö voi vaihdella projektin ja tilanteen mukaan, joten SPACE DIRT on vain yksi esimerkki. SPACE DIRT ja muut standardien mukaiset testaussuunnitelman sopivat kenties parhaiten suuriin projekteihin - pienemmässä projektissa niitä voi soveltaa poimimalla mukaan oman projektin kannalta keskeiset osa-alueet. Yleensä testaussuunnitelmassa kirjataan ainakin mitä ohjelmasta testataan, missä vaiheessa ja millä menetelmällä (Kasurinen, s.116).
 
-### Testitapaukset
+### Testitapausten suunnittelu
 
 Testaussuunnitelman jälkeen suunnitellaan **testitapaukset**, jotka kuvaavat yksittäisiä työvaiheita tai tapahtumaketjuja, joiden seurauksena järjestelmä suorittaa jonkin tehtävän. Kuvauksessa voidaan mainita esimerkiksi testin vaiheet ja odotettu lopputulos ja mitä testillä halutaan varmistaa.
 
@@ -125,19 +139,59 @@ Kasurisen (s. 122-123) mukaan testitapausten valintaan on kaksi päämenetelmä�
 
 ### Projektikohtainen pohdinta
 
-Omassa projektissani vaatimusten täyttymisen todentaminen on osittain haasteellista, koska kunnollista vaatimusmäärittelyä ei ole laadittu. Meillä on vain lista käyttäjätarinoita, jotka olemme purkaneet konkreettisiksi tehtäviksi projektitaulussa.
+Omassa projektissani vaatimusten täyttymisen todentaminen on osittain haasteellista, koska kunnollista vaatimusmäärittelyä ei ole laadittu. Meillä on vain lista käyttäjätarinoita, jotka olemme purkaneet konkreettisiksi tehtäviksi projektitaulussa. Tämän vuoksi testauksen painopiste on erityisesti sovelluksen keskeisten toimintojen **toimivuuden varmistamisessa ja vikojen löytämisessä**. Samalla testaus toimii välineenä arvioida projektin laatua käytännössä.
 
-Tämän vuoksi testauksen painopiste on erityisesti sovelluksen **keskeisten toimintojen toimivuuden varmistamisessa ja vikojen löytämisessä**. Samalla testaus toimii välineenä arvioida ratkaisujen ja koodin laatua käytännössä.
+Pääpaino tulee olemaan **yksikkö- ja integraatiotesteissä**, koska ne soveltuvat backendin REST-rajapinnan ja tietokantayhteyksien testaamiseen parhaiten. Järjestelmätestaus, ainakin Kasurisen kirjan määritelmän mukaisesti, olisi vaikea toteuttaa puutteellisten vaatimusmäärittelyjen sekä rajallisten resurssien vuoksi.
 
-Pääpaino tulee olemaan yksikkö- ja integraatiotestauksessa, koska ne sopivat parhaiten projektin laajuuteen ja resursseihin. Järjestelmätestaus, ainakin Kasurisen kirjan määritelmän mukaisesti, olisi vaikea toteuttaa puutteellisten vaatimusmäärittelyjen takiai.
-
-Projektin kokoon ja aikatauluun nähden täysimittainen SPACE DIRT -testaussuunnitelma olisi ylimitoitettu, kuten monet muutkin standardoidut mallit. Käytän sitä kuitenkin inspiraationa oman, kevyemmän testaussuunnitelman laatimisessa, joka keskittyy sovelluksen tärkeimpiin osiin ja riskilähtöiseen priorisointiin.
-
-Näin pystyn yhdistämään teoreettisen viitekehyksen ja käytännön tarpeet tarkoituksenmukaisella tavalla.
+Projektin kokoon ja aikatauluun nähden täysimittainen SPACE DIRT -testaussuunnitelma olisi ylimitoitettu. Käytän sitä kuitenkin inspiraationa oman, kevyemmän testaussuunnitelman laatimisessa, joka keskittyy sovelluksen tärkeimpiin osiin ja riskilähtöiseen priorisointiin. Näin pystyn yhdistämään teorian ja käytännön tarpeet, ja testausprosessi pysyy selkeänä ja johdonmukaisena.
 
 ## Testaussuunnitelma
 
+Testaussuunnitelma pohjautuu Kasurisen kuvaamiin testauksen periaatteisiin ja SPACE DIRT -malliin, jota on kevennetty Reddit Analyzer -projektiin sopivaksi.
 
+### Testauksen tavoite ja laajuus
+
+Testauksen tavoitteena on varmistaa backendin **keskeisten toimintojen toimivuus ja vakaus** ennen julkaisua. Lisäksi testit tukevat projektin **laadun arviointia**, esimerkiksi sovelluksen luotettavuuden ja mahdollisten vikojen kartoittamista, sekä paljastavat ratkaisujen **vahvuuksia ja puutteita**.
+
+Testauksen kohteena ovat:
+- **REST API** - vasteet, virheidenkäsittely ja raja-arvot
+- **Tietokantayhteydet (MongoDB)** - CRUD-operaatiot ja datan eheys
+- **Token-pohjainen käyttäjähallinta ja autentikointi** - rekisteröinti, kirjautuminen ja tokenien validointi
+
+Testaus **ei kata** analyysiputkia, koska ne ajetaan erillisessä automatisoidussa ympäristössä (*GitHub Actions*) eivätkä siten kuulu backendin suoritusympäristöön. Tämän vuoksi myös ulkoiset palvelut, kuten Reddit API, sekä analyyseissa käytettävät kirjastot (esim. BERTopic) jäävät testien ulkopuolelle. GitHub Actions tarjoaa kuitenkin työnkuluista suoraa palautetta lokeissa, mikä helpottaa analyysien toimivuuden seurantaa.
+
+Frontendin testaus ei kuulu tämän suunnitelman piiriin, sillä se on toisen tiimin jäsenen vastuulla.
+
+### Testauksen lähestymistapa
+
+Testauksessa noudatetaan **"testit ensin, refaktorointi jälkeen"** -periaatetta: testit kirjoitetaan ensin kaikille keskeisille toiminnoille, vaikka ne aluksi epäonnistuisivat, ja korjaukset toteutetaan lopuksi testien ohjaamana. Toiveena on, että tämä lähestymistapa auttaisi antamaan selkeän kuvan sovelluksen ongelmakohdista. Mikäli lähestymistapa osoittautuu liian haastavaksi tai aikaa vieväksi, voidaan siirtyä perinteisempään menetelmään, jossa refaktorointi ja testaus tehdään rinnakkain.
+
+Testauksessa hyödynnetään **pytest**iä yksikkö- ja integraatiotestien toteutukseen sekä **Allure Report**ia testitulosten visualisointiin. **Mongomock**ia käytetään tietokantatoimintojen simuloimiseen, jotta testit voidaan suorittaa ilman vaikutusta tuotantotietokantaan. Yksikkötesteillä varmistetaan yksittäisten funktioiden ja metodien toiminta, ja integraatiotesteillä testataan eri komponenttien, kuten REST API:n ja tietokannan, yhteistoimintaa.
+
+### Testiympäristö
+
+Testit suoritetaan ensisijaisesti **paikallisessa** Pythonin virtuaaliympäristössä. Jos aikataulu sallii, voidaan testien suoritus siirtää automatisoituun GitHub Actions -ympäristöön.
+
+### Testauksen kriteerit
+
+Seuraavat kriteerit ohjaavat testausprosessia ja pitävät sen hallittavana:
+- **Aloituskriteerit**: Tarvittavat kirjastot ja riippuvuudet on asennettu, backendin perustoiminnot toimivat paikallisesti, ja testiympäristö on pystytetty.
+- **Lopetuskriteerit**: Kaikki yksikkö- ja integraatiotestit on suoritettu ja kriittiset testit on läpäisty. Mahdolliset epäonnistuneet testit on dokumentoitu ja ratkaistu.
+- **Keskeytyskriteerit**: Testaus voidaan päättää, jos ilmenee odottamattomia ongelmia, kuten virheitä testiympäristössä, tai jos aika loppuu kesken.
+
+### Testien priorisointi
+
+Testit priorisoidaan siten, että sovelluksen **ydintoiminnot** varmistetaan ensin, ja vähemmän kriittiset osat testataan myöhemmin. Prioriteettijärjestys on seuraava:
+1. **Tietokantayhteydet**
+2. **REST API**
+3. **Käyttäjähallinta ja autentikointi**
+4. **Raja-arvot ja poikkeustapaukset**
+
+Tietokanta on sovelluksen kriittisin osa, koska kaikki analysoitu data ja käyttäjätiedot kulkevat sen kautta. Ilman toimivaa tietokantaa sovelluksen ydintoiminnot eivät ole käytettävissä, ja frontend jäisi käytännössä tyhjäksi. REST API on toiseksi tärkein osa, sillä frontendin toiminta ja datan käsittely riippuvat siitä. Käyttäjähallinta tuo sovellukseen lisäominaisuuksia, mutta ei ole käytön kannalta välttämätöntä, joten se on prioriteettilistalla alempana. Viimeiseksi jää raja-arvot ja poikkeustapaukset, koska ne eivät yleensä estä sovelluksen perustoimintaa, mutta niiden testaaminen voi parantaa sovelluksen vakautta.
+
+### Testauksen tuotokset
+
+Testauksen tulokset kootaan **Allure Report** -raporttiin, joka tarjoaa visuaalisen yhteenvedon testien kulusta, onnistumisista ja havaitusta virheistä. Raporttia voidaan käyttää apuna testitulosten analysoinnissa ja dokumentoinnissa.
 
 
 ## Lähteet
