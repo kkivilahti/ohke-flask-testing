@@ -16,11 +16,12 @@ Tässä seminaarityössä tutustun Flask-backendin testaukseen osana Ohjelmistop
 - [Testaussuunnitelma](#testaussuunnitelma)
   - [Testauksen tavoite ja laajuus](#testauksen-tavoite-ja-laajuus)
   - [Testattavat osa-alueet](#testattavat-osa-alueet)
+  - [Testien priorisointi](#testien-priorisointi)
   - [Testauksen lähestymistapa](#testauksen-lähestymistapa)
   - [Testauksen kriteerit](#testauksen-kriteerit)
   - [Testiympäristö](#testiympäristö)
-  - [Testien priorisointi](#testien-priorisointi)
   - [Testauksen tuotokset](#testauksen-tuotokset)
+- [Testitapaukset](#testitapaukset)
 - [Lähteet](#lähteet)
 - [Tekoälyn käyttö](#tekoälyn-käyttö-työn-toteutuksessa)
 
@@ -42,33 +43,51 @@ Minulle tämä seminaarityö on paitsi uusien testausmenetelmien ja -työkalujen
 title: Reddit Analyzer -sovelluksen arkkitehtuuri
 ---
 flowchart LR
-  subgraph A["GitHub Actions"]
-    A1["Ajastettu trigger"] --> A2["Reddit API -kyselyt"] --> A3["Analyysit, kuten aihemallinnus ja sentimenttianalyysi"]
-  end
+    %% GitHub Actions
+    subgraph A["GitHub Actions"]
+        A1["Ajastettu tai <br/> manuaalinen trigger"] --> A2["Reddit API -kyselyt"] --> A3["Analyysit, kuten <br/> aihemallinnus ja <br/> sentimenttianalyysi"]
+    end
 
-  B[("MongoDB Atlas")]
-  A3 --> B
+    subgraph B["Tietokanta"]
+        B1["MongoDB Atlas"]
+    end
 
-  B <--> C1
+    A3 -- tulosten tallennus --> B1
 
-  subgraph C["Flask-backend"]
-    C1["REST API, tietokantayhteydet ja käyttäjähallinta"]
-  end
+    %% Backend
+    subgraph C["Flask-backend"]
+        C1["REST API, käyttäjähallinta <br/> ja tietokantayhteydet"]
+    end
 
-  C1 <--> D1
+    C1 --> B1
+    B1 --> C1
 
-  subgraph D["Next.js-frontend"]
-    D1["Datan haku ja visualisointi"]
-  end
+    %% Frontend
+    subgraph D["Next.js-frontend"]
+        D1["Datan haku ja visualisointi"]
+    end
 
-  K["Käyttäjä"]
-  K --> D1
-  D1 --> K
+    D1 --> C1
+    C1 --> D1
+
+    K["Käyttäjä"]
+    K --> D1
+    D1 --> K
 ```
 
-Arkkitehtuurikaavio havainnollistaa, miten sovelluksen eri osat liittyvät toisiinsa ja mitä niiden vastuualueisiin kuuluu. Analyysiputket on eroteltu omaksi kokonaisuudekseen, koska ne ajetaan **GitHub Actions** -ympäristössä GitHubin virtuaalikoneilla, eivätkä siten kuulu Flask-backendin suoritusympäristöön. Backendin keskeiset osa-alueet ovat **REST-rajapinta, tietokantayhteydet ja käyttäjähallinta**, kun taas frontend vastaa datan visualisoinnista ja käyttäjän vuorovaikutuksesta sovelluksen kanssa.
+Arkkitehtuurikaavio havainnollistaa, miten sovelluksen eri osat liittyvät toisiinsa ja mitä niiden vastuualueisiin kuuluu. Analyysiputket on eroteltu omaksi kokonaisuudekseen, koska ne ajetaan **GitHub Actions** -ympäristössä GitHubin virtuaalikoneilla, eivätkä siten kuulu Flask-backendin suoritusympäristöön. Backendin keskeiset osa-alueet ovat **REST-rajapinta, käyttäjähallinta sekä tietokantayhteydet**, kun taas frontend vastaa datan visualisoinnista ja käyttäjän vuorovaikutuksesta sovelluksen kanssa.
 
 Reddit Analyzer on kehitetty viisihenkisessä tiimissä ketterien menetelmien mukaisesti. Oma roolini on painottunut backendin kehitykseen: olen vastannut muun muassa analyysiputkien suunnittelusta ja automatisoinnista sekä tilaustoiminnon toteutuksesta. 
+
+#### Reddit Analyzer -sanastoa
+
+- **Reddit** - laaja ja tunnettu verkkokeskustelualusta
+- **Subreddit** - aihekohtainen keskustelualue Redditissä (esim. [r/Suomi](https://www.reddit.com/r/Suomi/), [r/technology](https://www.reddit.com/r/technology/))
+- **Postaus** - käyttäjän julkaisema viesti subredditissä
+- **Reddit API** - Redditin tarjoama rajapinta, jonka kautta sovellus hakee Redditistä postauksia ja niiden kommentteja
+- **Aihemallinnus** (topic modeling) - NLP-tekniikka, jota käytetään tunnistamaan suurista tekstiaineistoista toistuvia teemoja
+- **Sentimenttianalyysi** - NLP-tekniikka, jota käytetään tunnistamaan tekstien sävyä (positiivinen, negatiivinen, neutraali)
+- **Analyysiputki** - GitHub Actionsissa ajettava automatisoitu prosessi, joka sisältää postausten haun Reddit APIsta, analyysit, joiden sisältö vaihtelee analyysin tyypistä riippuen (esim. trendianalyysi, tilauskohtainen analyysi), sekä tallennuksen tietokantaan
 
 ### Seminaarityön tavoitteet
 
@@ -94,6 +113,8 @@ Näin työ toimii paitsi käytännön oppimiskokemuksena myös osana projektin l
 - **Mongomock** - kirjasto, joka simuloi MongoDB:n toimintaa ja mahdollistaa tietokantaoperaatioiden testaamisen ilman oikeaa tietokantayhteyttä
 - **GitHub Actions** - GitHubin sisäänrakennettu CI/CD-ympäristö, jonka avulla testit ja muut työnkulut voidaan ajaa automaattisesti koodimuutosten yhteydessä tai esimerkiksi ajastettuna
 - **Allure Report** - työkalu, joka visualisoi testitulokset vuorovaikutteisena HTML-sivuna ja tarjoaa kokonaiskuvan testien tuloksista, kattavuudesta ja kehityksestä ajan myötä
+
+<p align="right"><a href="#seminaarityö-flask-backendin-testausta">⬆️</a></p>
 
 
 ## Testauksen perusteet
@@ -147,6 +168,8 @@ Pääpaino tulee olemaan **yksikkö- ja integraatiotesteissä**, koska ne sovelt
 
 Projektin kokoon ja aikatauluun nähden täysimittainen SPACE DIRT -testaussuunnitelma olisi ylimitoitettu. Käytän sitä kuitenkin inspiraationa oman, kevyemmän testaussuunnitelman laatimisessa, joka keskittyy sovelluksen tärkeimpiin osiin ja riskilähtöiseen priorisointiin. Näin pystyn yhdistämään teorian ja käytännön tarpeet, ja testausprosessi pysyy selkeänä ja johdonmukaisena.
 
+<p align="right"><a href="#seminaarityö-flask-backendin-testausta">⬆️</a></p>
+
 
 ## Testaussuunnitelma
 
@@ -183,13 +206,13 @@ REST APIn kautta hallinnoidaan kaikkia Reddit Analyzerin keskeisiä toimintoja, 
 | Trendianalyysi | `/api/statistics/<subreddit>/<days>` | GET | Hakee tilastot analysoitujen postausten määristä valitulla aikavälillä |
 | Trendianalyysi | `/api/statistics/topics/<subreddit>/<days>/<limit>` | GET | Hakee tilastot useimmiten esiintyvistä aiheista valitulla aikavälillä | 
 | Maakohtainen analyysi | `/api/subreddits/countries` | GET | Hakee listan maakohtaisista subredditeistä, joita analysoidaan automatisoidussa putkessa säännöllisesti | 
-| Maakohtainen analyysi | `/api/countries/latest/<subreddit>` | GET | Hakee tuoreimmat analyysin tulokset valitulle maakohtaiselle subredditille |
+| Maakohtainen analyysi | `/api/countries/latest/<subreddit>` | GET | Hakee tuoreimman analyysin tulokset valitulle maakohtaiselle subredditille |
 | Käyttäjähallinta | `/api/authentication/register` | POST | Luo uuden käyttäjätunnuksen | 
 | Käyttäjähallinta | `/api/authentication/login` | POST | Autentikoi käyttäjän ja palauttaa access- ja refresh-tokenit |
 | Käyttäjähallinta | `/api/authentication/refresh` | POST | Vaihtaa refresh-tokenin uudeksi access-tokeniksi | 
 | Käyttäjähallinta | `/api/authentication/logout` | DELETE | Peruu access-tokenin ja revokoi refresh-tokenin (kirjaa käyttäjän ulos) |
 | Käyttäjähallinta | `/api/authentication/delete` | DELETE | Poistaa käyttäjätunnuksen sekä siihen liittyvät mahdolliset aktiiviset tilaukset |
-| Tilaustoiminto | `/api/subscriptions/type/<type>` | GET | Hakee aktiiviset tilaukset analyysityypin (*posts* tai *topics*) mukaan | 
+| Tilaustoiminto | `/api/subscriptions/type/<type>` | GET | Hakee aktiiviset tilaukset analyysityypin mukaan | 
 | Tilaustoiminto | `/api/subscriptions/current-user` | GET | Hakee aktiiviset tilaukset nykyiselle käyttäjälle | 
 | Tilaustoiminto | `/api/subscriptions/current-user/add/<subreddit>/<type>` | POST | Luo tilauksen nykyiselle käyttäjälle valitulla subredditillä ja analyysityypillä |
 | Tilaustoiminto | `/api/subscriptions/current-user/deactivate` | PATCH | Deaktivoi nykyisen käyttäjän tilauksen |
@@ -207,7 +230,7 @@ Reddit Analyzerin tietokannan rakenne on seuraava:
 
 | Kokoelma | Sisältö |
 | -------- | ------- |
-| `posts` | Sisältää trendi- ja sentimenttianalyysien tulokset valikoiduille subredditeille. Data on järjestetty aihemallinnuksessa tunnistettujen aiheiden mukaan, joten selkeämpi kokoelman nimi voisi olla `topics`. |
+| `posts` | Sisältää trendi- ja sentimenttianalyysien tulokset valikoiduille subredditeille. (Data on järjestetty aihemallinnuksessa tunnistettujen aiheiden mukaan, joten selkeämpi kokoelman nimi voisi olla **topics**.) |
 | `countries` | Sisältää maakohtaisten subredditien analyysitulokset. Maakohtaisten subredditien analyysiin sisältyy postausten kääntäminen englanniksi (tarvittaessa) sekä postauskohtainen sentimenttianalyysi. |
 | `users` | Sisältää rekisteröityneiden käyttäjien tiedot. |
 | `subscriptions` | Sisältää käyttäjien tekemät subreddit-tilaukset ja mm. valitun analyysityypin. | 
@@ -245,10 +268,14 @@ Seuraavat kriteerit ohjaavat testausprosessia ja pitävät sen hallittavana:
 
 Testauksen tulokset kootaan **Allure Report** -raporttiin, joka tarjoaa visuaalisen yhteenvedon testien kulusta, onnistumisista ja havaitusta virheistä. Raporttia voidaan käyttää apuna testitulosten analysoinnissa ja dokumentoinnissa.
 
+<p align="right"><a href="#seminaarityö-flask-backendin-testausta">⬆️</a></p>
+
 
 ## Testitapaukset
 
-Seuraavaksi kuvaan keskeiset testitapaukset, jotka pohjautuvat edellä esitettyyn testaussuunnitelmaan. Testitapaukset on ryhmitelty testattavien osa-alueiden mukaan (tietokanta, REST API, käyttäjähallinta)
+Seuraavaksi kuvaan keskeiset testitapaukset, jotka pohjautuvat edellä esitettyyn testaussuunnitelmaan. Testitapaukset on ryhmitelty testattavien osa-alueiden mukaan (tietokanta, REST API, käyttäjähallinta).
+
+
 
 
 ## Lähteet
