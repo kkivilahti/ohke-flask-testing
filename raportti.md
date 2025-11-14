@@ -4,23 +4,8 @@ Tässä seminaarityössä tutustun Flask-backendin testaukseen osana Ohjelmistop
 
 **Sisällysluettelo**:
 - [Johdanto](#johdanto)
-  - [Projektin tausta](#projektin-tausta)
-  - [Seminaarityön tavoitteet](#seminaarityön-tavoitteet)
-  - [Suunnitellut teknologiat](#suunnitellut-teknologiat)
 - [Testauksen perusteet](#testauksen-perusteet)
-  - [Testauksen merkitys](#testauksen-merkitys)
-  - [Testauksen tasot](#testauksen-tasot)
-  - [Testauksen suunnittelu](#testauksen-suunnittelu)
-  - [Testitapausten suunnittelu](#testitapausten-suunnittelu)
-  - [Pohdinta](#projektikohtainen-pohdinta)
 - [Testaussuunnitelma](#testaussuunnitelma)
-  - [Testauksen tavoite ja laajuus](#testauksen-tavoite-ja-laajuus)
-  - [Testattavat osa-alueet](#testattavat-osa-alueet)
-  - [Testien priorisointi](#testien-priorisointi)
-  - [Testauksen lähestymistapa](#testauksen-lähestymistapa)
-  - [Testauksen kriteerit](#testauksen-kriteerit)
-  - [Testiympäristö](#testiympäristö)
-  - [Testauksen tuotokset](#testauksen-tuotokset)
 - [Testitapaukset](#testitapaukset)
 - [Lähteet](#lähteet)
 - [Tekoälyn käyttö](#tekoälyn-käyttö-työn-toteutuksessa)
@@ -79,7 +64,8 @@ Arkkitehtuurikaavio havainnollistaa, miten sovelluksen eri osat liittyvät toisi
 
 Reddit Analyzer on kehitetty viisihenkisessä tiimissä ketterien menetelmien mukaisesti. Oma roolini on painottunut backendin kehitykseen: olen vastannut muun muassa analyysiputkien suunnittelusta ja automatisoinnista sekä tilaustoiminnon toteutuksesta. 
 
-#### Reddit Analyzer -sanastoa
+<details>
+<summary><strong>Reddit Analyzer -sanastoa</strong> (avaa klikkaamalla)</summary>
 
 - **Reddit** - laaja ja tunnettu verkkokeskustelualusta
 - **Subreddit** - aihekohtainen keskustelualue Redditissä (esim. [r/Suomi](https://www.reddit.com/r/Suomi/), [r/technology](https://www.reddit.com/r/technology/))
@@ -88,6 +74,8 @@ Reddit Analyzer on kehitetty viisihenkisessä tiimissä ketterien menetelmien mu
 - **Aihemallinnus** (topic modeling) - NLP-tekniikka, jota käytetään tunnistamaan suurista tekstiaineistoista toistuvia teemoja
 - **Sentimenttianalyysi** - NLP-tekniikka, jota käytetään tunnistamaan tekstien sävyä (positiivinen, negatiivinen, neutraali)
 - **Analyysiputki** - GitHub Actionsissa ajettava automatisoitu prosessi, joka sisältää postausten haun Reddit APIsta, analyysit, joiden sisältö vaihtelee analyysin tyypistä riippuen (esim. trendianalyysi, tilauskohtainen analyysi), sekä tallennuksen tietokantaan
+
+</details>
 
 ### Seminaarityön tavoitteet
 
@@ -119,6 +107,10 @@ Näin työ toimii paitsi käytännön oppimiskokemuksena myös osana projektin l
 
 ## Testauksen perusteet
 
+ℹ️ Hahmottaakseni testien suunnittelua paremmin, kertasin hieman testauksen teoriaa. Jos haluatte painottaa arvioinnissa enemmän teknistä toteutusta, tätä osiota ei ole pakko sisällyttää mukaan.
+
+<details>
+  <summary><strong>Katso teoriaosio</strong></summary>
 Ennen testauksen suunnittelua haluan kerrata lyhyesti keskeiset testauksen periaatteet ja käsitteet. Teoriapohjana hyödynnän Jussi Pekka Kasurisen kirjaa *Ohjelmistotestauksen käsikirja*, johon tutustuin Haaga-Helian Ohjelmistotestauksen kurssilla tänä syksynä.
 
 ### Testauksen merkitys
@@ -168,10 +160,17 @@ Pääpaino tulee olemaan **yksikkö- ja integraatiotesteissä**, koska ne sovelt
 
 Projektin kokoon ja aikatauluun nähden täysimittainen SPACE DIRT -testaussuunnitelma olisi ylimitoitettu. Käytän sitä kuitenkin inspiraationa oman, kevyemmän testaussuunnitelman laatimisessa, joka keskittyy sovelluksen tärkeimpiin osiin ja riskilähtöiseen priorisointiin. Näin pystyn yhdistämään teorian ja käytännön tarpeet, ja testausprosessi pysyy selkeänä ja johdonmukaisena.
 
+</details>
+
 <p align="right"><a href="#seminaarityö-flask-backendin-testausta">⬆️</a></p>
 
 
 ## Testaussuunnitelma
+
+ℹ️ Jotta testausprosessi olisi mahdollisimman hallittu ja tehokas, laadin melko kattavan testaussuunnitelman. Jos haluatte painottaa arvioinnissa enemmän teknistä toteutusta, tätä osiota ei ole pakko sisällyttää mukaan. Jos haluaa lukea vain tärkeimmät kohdat, niin suosittelen kolmea ensimmäistä osiota (*Testauksen tavoite*, *Testauksen osa-alueet* ja *Testien priorisointi*).
+
+<details>
+<summary><strong>Katso testaussuunnitelma</strong></summary>
 
 Testaussuunnitelma pohjautuu Kasurisen kuvaamiin testauksen periaatteisiin ja SPACE DIRT -malliin, jota on kevennetty Reddit Analyzer -projektiin sopivaksi.
 
@@ -268,15 +267,81 @@ Seuraavat kriteerit ohjaavat testausprosessia ja pitävät sen hallittavana:
 
 Testauksen tulokset kootaan **Allure Report** -raporttiin, joka tarjoaa visuaalisen yhteenvedon testien kulusta, onnistumisista ja havaitusta virheistä. Raporttia voidaan käyttää apuna testitulosten analysoinnissa ja dokumentoinnissa.
 
+</details>
+
 <p align="right"><a href="#seminaarityö-flask-backendin-testausta">⬆️</a></p>
+
 
 
 ## Testitapaukset
 
-Seuraavaksi kuvaan keskeiset testitapaukset, jotka pohjautuvat edellä esitettyyn testaussuunnitelmaan. Testitapaukset on ryhmitelty testattavien osa-alueiden mukaan (tietokanta, REST API, käyttäjähallinta).
+Seuraavaksi kuvaan keskeiset testitapaukset, jotka pohjautuvat edellä esitettyyn testaussuunnitelmaan. Testitapaukset on ryhmitelty testattavien osa-alueiden mukaan (tietokanta, REST API, käyttäjähallinta). Tavoitteena on suunnitella testitapaukset niin, että ne on helppo jäljittää koodista ja Allure Report -raportista suunnitelmaan. 
+
+Koska vaatimusmäärittelymme on vajavaista eikä esimerkiksi hyväksymiskriteerejä ole määritelty, suunnittelen testitapauksia pääasiassa sen perusteella, mitä ajattelen sovelluksen toimintojen **kuuluvan** tehdä.
+
+### Tietokantatestit
+
+Tietokantatestit tulevat olemaan (todennäköisesti) yksikkötestejä. Tietokantamme data on moninaista, emmekä ole määritelleet skeemoja tai pakollisia arvoja, joten en aio keskittyä validoimaan datan eheyttä. Sen sijaan teen muutamia esimerkkidokumentteja ja -kokoelmia, joita simuloin testitietokannassa, varmistaakseni tietokantafunktioiden toiminnan.
+
+#### TC-01 - Data tallennetaan tietokantaan
+**Kuvaus**: Testaa `save_data_to_database(data_to_save, collection)` -funktion toimintaa, varmistaen että data **tallentuu oikein** ja virhetilanteet käsitellään asianmukaisesti.<br>
+**Prioriteetti**: korkea
+
+| # | Testivaihe | Tavoite | Syöte tai parametri | Odotettu tulos |
+|---|------------|---------|---------------------|----------------|
+| 1 | Tallennetaan yksittäinen dokumentti | Varmistaa, että yksittäisen dokumentin tallennus onnistuu | Validi dokumentti | Dokumentti lisätään kokoelmaan |
+| 2 | Tallennetaan lista dokumentteja | Varmistaa, että useamman dokumentin tallennus onnistuu | Lista valideja dokumentteja | Kaikki dokumentit lisätään kokoelmaan |
+| 3 | Tallennetaan tyhjä dokumenttilista | Varmistaa, että virheenkäsittely toimii | Tyhjä lista | `ValueError` tai vastaava |
+| 4 | Tallennetaan väärän tyyppistä dataa | Varmistaa, että virheenkäsittely toimii | Virheellinen datatyyppi, kuten merkkijono | `TypeError` tai vastaava |
 
 
+#### TC-02 - Data haetaan kokoelmasta
+**Kuvaus**: Testaa `fetch_data_from_collection(collection, filter=None)` -funktion toimintaa, varmistaen että data **haku toimii oikein** ja virhetilanteet käsitellään asianmukaisesti.<br>
+**Prioriteetti**: korkea
 
+| # | Testivaihe | Tavoite | Syöte tai parametri | Odotettu tulos |
+|---|------------|---------|---------------------|----------------|
+| 1 | Hae kaikki dokumentit | Varmistaa, että kaikkien dokumenttien haku toimii normaalisti | Ei `filter`-parametria | Kaikki dokumentit palautetaan listana |
+| 2 | Hae dokumentit käyttäen filtteriä | Varmistaa, että haku palauttaa suodatetut dokumentit oikein | Validi `filter` | Palauttaa suodatinta vastaavat dokumentit listana | 
+| 3 | Hae dokumenttia, jota ei ole olemassa | Varmistaa, että haku palauttaa tyhjän listan, jos dokumenttia ei löydy | Invalidi `filter` (ei vastaa mitään dokumenttia) | Tyhjä lista |
+
+
+#### TC-03 - Yksittäisen dokumentin päivittäminen tietokannassa
+**Kuvaus**: Testaa `update_one_item_in_collection(collection, filter, update)` -funktion toimintaa, varmistaen että datan **päivitys toimii oikein** ja virhetilanteet käsitellään asianmukaisesti.<br>
+**Prioriteetti**: korkea
+
+| # | Testivaihe | Tavoite | Syöte tai parametri | Odotettu tulos |
+|---|------------|---------|---------------------|----------------|
+| 1 | Päivitä olemassa oleva dokumentti | Varmistaa, että päivitys onnistuu | Validi `filter` ja `update` | Dokumentti päivitetään onnistuneesti | 
+| 2 | Päivitä dokumenttia, jota ei ole olemassa | Varmistaa, että virheenkäsittely toimii | Invalidi `filter` (ei vastaa mitään dokumenttia) | `ValueError` tai vastaava |
+| 3 | Päivitä dokumenttia virheellisellä filtterillä | Varmistaa, että virheenkäsittely toimii | Invalidi `filter`, esim. merkkijono | `TypeError` tai vastaava |
+
+#### TC-04 - 
+**Kuvaus**: Testaa x, varmistaen että y ja virhetilanteet käsitellään asianmukaisesti.<br>
+**Prioriteetti**: korkea
+
+| # | Testivaihe | Tavoite | Syöte tai parametri | Odotettu tulos |
+|---|------------|---------|---------------------|----------------|
+| 1 |
+
+#### TC-05 - 
+**Kuvaus**: Testaa x, varmistaen että y ja virhetilanteet käsitellään asianmukaisesti.<br>
+**Prioriteetti**: korkea
+
+| # | Testivaihe | Tavoite | Syöte tai parametri | Odotettu tulos |
+|---|------------|---------|---------------------|----------------|
+| 1 | 
+
+#### TC-06 - 
+**Kuvaus**: Testaa x, varmistaen että y ja virhetilanteet käsitellään asianmukaisesti.<br>
+**Prioriteetti**: korkea
+
+| # | Testivaihe | Tavoite | Syöte tai parametri | Odotettu tulos |
+|---|------------|---------|---------------------|----------------|
+| 1 |  
+
+
+<p align="right"><a href="#seminaarityö-flask-backendin-testausta">⬆️</a></p>
 
 ## Lähteet
 - https://flask.palletsprojects.com/en/stable/testing/
