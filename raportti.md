@@ -65,7 +65,7 @@ Arkkitehtuurikaavio havainnollistaa, miten sovelluksen eri osat liittyvät toisi
 Reddit Analyzer on kehitetty viisihenkisessä tiimissä ketterien menetelmien mukaisesti. Oma roolini on painottunut backendin kehitykseen: olen vastannut muun muassa analyysiputkien suunnittelusta ja automatisoinnista sekä tilaustoiminnon toteutuksesta. 
 
 <details>
-<summary><strong>Reddit Analyzer -sanastoa</strong> (avaa klikkaamalla)</summary>
+<summary><strong>Reddit Analyzer -sanastoa</strong></summary>
 
 - **Reddit** - laaja ja tunnettu verkkokeskustelualusta
 - **Subreddit** - aihekohtainen keskustelualue Redditissä (esim. [r/Suomi](https://www.reddit.com/r/Suomi/), [r/technology](https://www.reddit.com/r/technology/))
@@ -110,7 +110,8 @@ Näin työ toimii paitsi käytännön oppimiskokemuksena myös osana projektin l
 ℹ️ Hahmottaakseni testien suunnittelua paremmin, kertasin hieman testauksen teoriaa. Jos haluatte painottaa arvioinnissa enemmän teknistä toteutusta, tätä osiota ei ole pakko sisällyttää mukaan.
 
 <details>
-  <summary><strong>Katso teoriaosio</strong></summary>
+<summary><strong>Katso teoriaosio</strong></summary>
+
 Ennen testauksen suunnittelua haluan kerrata lyhyesti keskeiset testauksen periaatteet ja käsitteet. Teoriapohjana hyödynnän Jussi Pekka Kasurisen kirjaa *Ohjelmistotestauksen käsikirja*, johon tutustuin Haaga-Helian Ohjelmistotestauksen kurssilla tänä syksynä.
 
 ### Testauksen merkitys
@@ -239,12 +240,18 @@ Tietokantayhteyksiä hallitaan backendissa pääasiassa erillisen tietokantakerr
 
 ### Testien priorisointi
 
-Testit priorisoidaan siten, että sovelluksen **ydintoiminnot** varmistetaan ensin, ja vähemmän kriittiset osat testataan myöhemmin. Prioriteettijärjestys on seuraava:
+Testit priorisoidaan siten, että sovelluksen **ydintoiminnot** varmistetaan ensin, ja vähemmän kriittiset osat testataan myöhemmin. Osa-alueiden prioriteettijärjestys on seuraava:
 1. **Tietokantayhteydet**
 2. **REST API**
 3. **Käyttäjähallinta ja autentikointi**
 
 Tietokanta on sovelluksen kriittisin osa, koska kaikki analysoitu data ja käyttäjätiedot kulkevat sen kautta. Ilman toimivaa tietokantaa sovelluksen ydintoiminnot eivät ole käytettävissä, ja frontend jäisi käytännössä tyhjäksi. REST API on toiseksi tärkein osa, sillä frontendin toiminta ja datan käsittely riippuvat siitä. Käyttäjähallinta tuo sovellukseen lisäominaisuuksia, mutta ei ole käytön kannalta välttämätöntä, joten se on prioriteettilistalla alempana. 
+
+Myös yksittäisille **testitapauksille** annetaan prioriteettiluokitus, kuten **korkea, keskitason tai matala**, sen mukaan, kuinka tärkeä testi on sovelluksen ydintoimintojen varmistamisen kannalta.
+
+Täten testejä priorisoidaan kahdella tasolla:
+1. **Osa-alueen kriittisyys** - määrittää, missä järjestyksessä sovelluksen osia testataan (tietokanta → REST API → käyttäjähallinta)
+2. **Testitapausten kriittisyys** - määrittää, missä järjestyksessä testejä suoritetaan saman osa-alueen sisällä (edeten korkeimmasta prioriteetista matalimpaan)
 
 ### Testauksen lähestymistapa
 
@@ -295,7 +302,7 @@ Tietokantatestit tulevat olemaan (todennäköisesti) yksikkötestejä. Tietokant
 | 4 | Tallennetaan väärän tyyppistä dataa | Varmistaa, että virheenkäsittely toimii | Virheellinen datatyyppi, kuten merkkijono | `TypeError` tai vastaava |
 
 
-#### TC-02 - Data haetaan kokoelmasta
+#### TC-02 - Data haetaan tietokannasta
 **Kuvaus**: Testaa `fetch_data_from_collection(collection, filter=None)` -funktion toimintaa, varmistaen että data **haku toimii oikein** ja virhetilanteet käsitellään asianmukaisesti.<br>
 **Prioriteetti**: korkea
 
@@ -306,7 +313,7 @@ Tietokantatestit tulevat olemaan (todennäköisesti) yksikkötestejä. Tietokant
 | 3 | Hae dokumenttia, jota ei ole olemassa | Varmistaa, että haku palauttaa tyhjän listan, jos dokumenttia ei löydy | Invalidi `filter` (ei vastaa mitään dokumenttia) | Tyhjä lista |
 
 
-#### TC-03 - Yksittäisen dokumentin päivittäminen tietokannassa
+#### TC-03 - Dokumentin päivittäminen tietokannassa
 **Kuvaus**: Testaa `update_one_item_in_collection(collection, filter, update)` -funktion toimintaa, varmistaen että datan **päivitys toimii oikein** ja virhetilanteet käsitellään asianmukaisesti.<br>
 **Prioriteetti**: korkea
 
@@ -316,32 +323,63 @@ Tietokantatestit tulevat olemaan (todennäköisesti) yksikkötestejä. Tietokant
 | 2 | Päivitä dokumenttia, jota ei ole olemassa | Varmistaa, että virheenkäsittely toimii | Invalidi `filter` (ei vastaa mitään dokumenttia) | `ValueError` tai vastaava |
 | 3 | Päivitä dokumenttia virheellisellä filtterillä | Varmistaa, että virheenkäsittely toimii | Invalidi `filter`, esim. merkkijono | `TypeError` tai vastaava |
 
-#### TC-04 - 
-**Kuvaus**: Testaa x, varmistaen että y ja virhetilanteet käsitellään asianmukaisesti.<br>
+
+#### TC-04 - Dokumentin poistaminen tietokannasta
+**Kuvaus**: Testaa `delete_one_item_from_collection(collection, filter)`, varmistaen että datan **poisto toimii oikein** ja virhetilanteet käsitellään asianmukaisesti.<br>
 **Prioriteetti**: korkea
 
 | # | Testivaihe | Tavoite | Syöte tai parametri | Odotettu tulos |
 |---|------------|---------|---------------------|----------------|
-| 1 |
+| 1 | Poista olemassa oleva dokumentti | Varmistaa, että poisto onnistuu | Validi `filter` (vastaa olemassaolevaa dokumenttia) | Dokumentti poistetaan onnistuneesti |
+| 2 | Poista dokumentti, jota ei ole olemassa | Varmistaa, että virheenkäsittely toimii | Invalidi `filter` (ei vastaa mitään dokumenttia) | `ValueError` tai vastaava |
+| 3 | Poista dokumentti virheellisellä filtterillä | Varmistaa, että virheenkäsittely toimii | Invalidi `filter`, esim. merkkijono | `TypeError` tai vastaava |
 
-#### TC-05 - 
-**Kuvaus**: Testaa x, varmistaen että y ja virhetilanteet käsitellään asianmukaisesti.<br>
-**Prioriteetti**: korkea
+
+> [!NOTE]
+> Seuraavia analyysituloksia käsitteleviä testejä varten täytyy luoda hieman laajempi testidatasetti, joka kattaa erityyppiset analyysitulokset. Dataa täytyy tallettaa myös eri timestampeilla.
+>
+> Selkeyden vuoksi analyysituloksia käsittelevät testit kannattaa erotella perustoimintoja (kuten tallennus, päivitys) testaavista testeistä omiin tiedostoihinsa.
+
+
+#### TC-05 - Uusimpien analyysitulosten haku valitulle subredditille
+**Kuvaus**: Testaa `get_latest_data_by_subreddit(collection, subreddit, type=None)` -funktion toimintaa, varmistaen että funktio **palauttaa uusimman datan oikein** ja käsittelee virhetilanteet asianmukaisesti.<br>
+**Prioriteetti**: korkea<br>
 
 | # | Testivaihe | Tavoite | Syöte tai parametri | Odotettu tulos |
 |---|------------|---------|---------------------|----------------|
-| 1 | 
+| 1 | Hae uusimmat dokumentit ilman `type`-filtteriä | Varmistaa, että uusimmat dokumentit palautetaan oikein | Validi `subreddit` (vastaa testidataa) | Palauttaa dokumentin uusimmalla timestampilla |
+| 2 | Hae uusimmat dokumentit `type`-filtterin kanssa | Varmistaa, että analyysityypin filtteriöinti toimii | Validi `subreddit` ja `type` (vastaa testidataa) | Palauttaa dokumentin uusimmalla timestampilla ja oikealla analyysityypillä |
+| 3 | Hae dokumentteja subredditistä, jota ei ole olemassa | Varmistaa, että olemattomasta subredditistä haku käsitellään oikein | Invalidi `subreddit` | Tyhjä lista | 
+| 4 | Hae virheellisellä `type`-parametrilla | Varmistaa, että virheenkäsittely toimii | Invalidi `type`, eli joku muu kuin *posts* tai *topics* | `ValueError` |
 
-#### TC-06 - 
-**Kuvaus**: Testaa x, varmistaen että y ja virhetilanteet käsitellään asianmukaisesti.<br>
-**Prioriteetti**: korkea
+
+#### TC-06 - Postausmäärien laskeminen valitulla aikavälillä
+**Kuvaus**: Testaa `get_post_numbers_by_timeperiod(subreddit, number_of_days)` -funktion toimintaa, varmistaen että funktio **laskee postausmäärät oikein** ja virhetilanteet käsitellään asianmukaisesti.<br>
+**Prioriteetti**: keskitaso<br>
+**Huomio**: Testidataan täytyy lisätä useamman päivän postauksia, jotta aggregointi toimii oikein.
 
 | # | Testivaihe | Tavoite | Syöte tai parametri | Odotettu tulos |
 |---|------------|---------|---------------------|----------------|
-| 1 |  
+| 1 | Hae postaukset olemassaolevalle subredditille | Varmistaa, että postausmäärät lasketaan oikein | Validi `subreddit` ja `number_of_days` | Palauttaa listan postausmääristä, ja määrät ovat oikein |
+| 2 | Hae postaukset subredditille, jota ei ole olemassa | Varmistaa, että olemattomasta subredditistä haku käsitellään oikein | Invalidi `subreddit` | Tyhjä lista |
+| 3 | Hae virheellisellä `number_of_days`-parametrilla | Varmistaa, että virheenkäsittely toimii | Invalidi `number_of_days`, esim. negatiivinen luku | `ValueError` | 
 
+
+#### TC-07 - Suosituimpien topicien haku valitulla aikavälillä
+**Kuvaus**: Testaa `get_top_topics_by_timeperiod(subreddit, number_of_days, limit)` -funktion toimintaa, varmistaen että funktio **palauttaa topicit oikeassa järjestyksessä ja oikeilla määrillä** ja virhetilanteet käsitellään asianmukaisesti.<br>
+**Prioriteetti**: keskitaso<br>
+**Huomio**: Testidataan täytyy lisätä useamman päivän postauksia, jotta aggregointi toimii oikein.
+
+| # | Testivaihe | Tavoite | Syöte tai parametri | Odotettu tulos |
+|---|------------|---------|---------------------|----------------|
+| 1 | Hae suosituimmat topicit olemassaolevalle subredditille | Varmistaa, että suosituimmat topicit lasketaan oikein | Validi `subreddit`, `number_of_days` ja `limit` | Palauttaa listan topiceja oikeassa järjestyksessä, topicien määrä == limit |
+| 2 | Hae suosituimmat topicit subredditille, jota ei ole olemassa | Varmistaa, että olemattomasta subredditistä haku käsitellään oikein | Invalidi `subreddit` | Tyhjä lista |
+| 3 | Hae suurella `limit`-arvolla | Varmistaa, että funktio palauttaa kaikki saatavilla olevat topicit eikä virhettä synny | Validi `subreddit`, suuri `limit` | Kaikki suosituimmat topicit, ja määrä < `limit` | 
+| 4 | Hae virheellisellä `number_of_days`-parametrilla | Varmistaa, että virheenkäsittely toimii | Invalidi `number_of_days`, esim. negatiivinen luku | `ValueError` |
 
 <p align="right"><a href="#seminaarityö-flask-backendin-testausta">⬆️</a></p>
+
+
 
 ## Lähteet
 - https://flask.palletsprojects.com/en/stable/testing/
