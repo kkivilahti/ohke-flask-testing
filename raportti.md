@@ -118,15 +118,19 @@ Ennen testauksen suunnittelua haluan kerrata lyhyesti keskeiset testauksen peria
 
 Testaus on keskeinen osa ohjelmistokehitystä, ja sen tarkoituksena on varmistaa, että ohjelmisto **toimii suunnitellusti** ja **täyttää** käyttäjien sekä sidosryhmien **vaatimukset**. Testauksen avulla voidaan havaita vikoja ja puutteita, jotka muuten saattaisivat johtaa ohjelmiston epätoivottuun toimintaan. (Kasurinen, luku 1)
 
-### Testauksen tasot
+### Testauksen tasot ja menetelmät
 
-Kasurisen kirjan (luku 3) mukaan testauksessa voidaan erottaa useita tasoja, jotka kattavat ohjelmiston eri osa-alueita ja tarjoavat eri näkökulmia laadunvarmistukseen.
+Kasurisen kirjan mukaan testauksessa on useita tasoja ja menetelmiä, jotka kattavat ohjelmiston eri osa-alueita ja tarjoavat laadunvarmistukseen eri näkökulmia. Testauksen tasoja kuvataan kirjan sivuilla 50-57 ja menetelmiä sivuilla 64-68.
 
 **Yksikkötestaus** kohdistuu yksittäisen moduulin, funktion tai olion toiminnan varmentamiseen. Testeillä voidaan tarkistaa esimerkiksi erilaisten syötteiden käsittely, raja-arvot ja poikkeustilanteiden hallinta.
 
 **Integraatiotestaus** tarkastelee ohjelmiston eri osien yhteistoimintaa. Sen avulla varmistetaan, että eri moduulit ja rajapinnat kommunikoivat oikein keskenään.
 
 **Järjestelmätestaus** kohdistuu koko järjestelmään, ja sen tarkoituksena on varmistaa, että ohjelmisto toimii kokonaisuutena ja täyttää sille asetetut vaatimukset.
+
+**Mustalaatikkotestaus** on menetelmä, jossa ohjelmistoa arvioidaan sen ulkoisen käyttäytymisen, eli syötteiden ja niistä tuotettujen tulosten perusteella. Testaajalla ei ole tietoa ohjelmiston sisäisestä toteutuksesta.
+
+**Lasilaatikkotestaus** on menetelmä, jossa testaus perustuu ohjelmiston sisäisen rakenteen ja logiikan tuntemiseen. Testaaja suunnittelee testit syötteiden lisäksi myös sen perusteella, miten ohjelmisto on toteutettu ja mitä sen sisällä tapahtuu.
 
 ### Testauksen suunnittelu
 
@@ -168,7 +172,7 @@ Projektin kokoon ja aikatauluun nähden täysimittainen SPACE DIRT -testaussuunn
 
 ## Testaussuunnitelma
 
-ℹ️ Jotta testausprosessi olisi mahdollisimman hallittu ja tehokas, laadin melko kattavan testaussuunnitelman. Jos haluatte painottaa arvioinnissa enemmän teknistä toteutusta, tätä osiota ei ole pakko sisällyttää mukaan. Jos haluaa lukea vain tärkeimmät kohdat, niin suosittelen kolmea ensimmäistä osiota (*Testauksen tavoite*, *Testauksen osa-alueet* ja *Testien priorisointi*).
+ℹ️ Jotta testausprosessi olisi mahdollisimman hallittu ja tehokas, laadin melko kattavan testaussuunnitelman. Jos haluatte painottaa arvioinnissa enemmän teknistä toteutusta, tätä osiota ei ole pakko sisällyttää mukaan. Osion lukeminen auttaa kuitenkin hahmottamaan työn tulevia osioita, kuten testitapausten suunnittelua. *Testattavat osa-alueet* -osio auttaa lisäksi ymmärtämään Reddit Analyzerin toimintaa.
 
 <details>
 <summary><strong>Katso testaussuunnitelma</strong></summary>
@@ -188,6 +192,14 @@ Testaus **ei kata** analyysiputkia, koska ne ajetaan erillisessä automatisoidus
 
 Frontendin testaus ei kuulu tämän suunnitelman piiriin, sillä se on toisen tiimin jäsenen vastuulla.
 
+### Testauksen lähestymistapa
+
+Testauksessa noudatetaan **"testit ensin, refaktorointi jälkeen"** -periaatetta: testit kirjoitetaan ensin kaikille keskeisille toiminnoille, vaikka ne aluksi epäonnistuisivat, ja korjaukset toteutetaan lopuksi testien ohjaamana. Toiveena on, että tämä lähestymistapa auttaisi antamaan selkeän kuvan sovelluksen ongelmakohdista. Mikäli lähestymistapa osoittautuu liian haastavaksi tai aikaa vieväksi, voidaan siirtyä perinteisempään menetelmään, jossa refaktorointi ja testaus tehdään rinnakkain.
+
+Koska vaatimusmäärittelymme on vajavaista eikä esimerkiksi hyväksymiskriteerejä ole määritelty, suunnittelen testit pääasiassa sen perusteella, mitä ajattelen sovelluksen toimintojen **kuuluvan** tehdä. Tämä tukee testauksen päätavoitetta, eli sovelluksen kriittisten osien toimivuuden ja vakauden varmistamista. Testitapausten ja testien suunnittelussa hyödynnetään **lasilaatikkomenetelmää**, eli testejä suunnitellaan tarkastelemalla suoraan testattavien funktioiden rakennetta ja logiikkaa.
+
+Testauksessa hyödynnetään **pytest**iä yksikkö- ja integraatiotestien toteutukseen sekä **Allure Report**ia testitulosten visualisointiin. **Mongomock**ia käytetään tietokantatoimintojen simuloimiseen, jotta testit voidaan suorittaa ilman vaikutusta tuotantotietokantaan. Yksikkötesteillä varmistetaan yksittäisten funktioiden ja metodien toiminta, ja integraatiotesteillä testataan eri komponenttien, kuten REST API:n ja tietokannan, yhteistoimintaa.
+
 ### Testattavat osa-alueet
 
 #### REST API ja käyttäjähallinta
@@ -197,7 +209,6 @@ REST APIn kautta hallinnoidaan kaikkia Reddit Analyzerin keskeisiä toimintoja, 
 - **Maakohtainen subreddit-analyysi**: pieni määrä maakohtaisia Reddit-postauksia käsitellään kielenkäännöksellä (tarvittaessa) ja sentimenttianalyysilla. Rajapinnan kautta tarjoillaan maakohtaiset subredditit, joille analyyseja säännöllisesti suoritetaan, sekä näiden analyysien tuloksia.
 - **Käyttäjähallinta**: Käyttäjähallinnassa hallinnoidaan rekisteröitymistä, kirjautumista ja uloskirjautumista rajapinnan kautta. Käyttäjän autentikointiin käytetään access- ja refresh-tokeneita: access-tokenilla pääsee tekemään rajapintapyynnöt, ja refresh-tokenilla voi tarvittaessa uusia access-tokenin. Logout poistaa käytössä olevan access-tokenin ja merkitsee refresh-tokenin mitätöidyksi.
 - **Tilauspohjainen subreddit-analyysi**: käyttäjä voi tilata analyysit haluamaansa subredditiin, haluamallaan analyysityypillä (*posts* tai *topics*), ja tilausten pohjalta suoritetaan analyysit säännöllisesti Actionsin kautta. Rajapinnan kautta suoritetaan toimintoja kuten tilauksen lisäys, deaktivointi, ja tilauskohtaisten analyysitulosten haku.
-
 
 | Toiminto | Endpoint | Metodi | Kuvaus |
 | -------- | -------- | ------ | ------ |
@@ -226,7 +237,7 @@ Tarkka kuvaus kaikista endpointeista, sisältäen mm. esimerkkipyynnöt ja -vast
 
 Reddit Analyzerin tietokanta on toteutettu [MongoDB Atlas](https://www.mongodb.com/docs/atlas/) -palvelussa, joka mahdollistaa tietokannan hallinnoinnin kätevästi web-käyttöliittymän kautta. MongoDB on NoSQL-dokumenttitietokanta, jossa data tallennetaan JSON-muotoisiin dokumentteihin. Dokumenttien data organisoidaan *kokoelmiin* (eng. collection), jotka vastaavat relaatiotietokannan *tauluja*. Dokumenttitietokannassa data voi olla monimuotoista, koska skeemat eivät ole pakollisia. MongoDB:stä voi lukea lisää esimerkiksi [täältä](https://www.mongodb.com/docs/manual/introduction/).
 
-Reddit Analyzerin tietokannan rakenne on seuraava:
+Reddit Analyzerin tietokanta sisältää seuraavat kokoelmat:
 
 | Kokoelma | Sisältö |
 | -------- | ------- |
@@ -236,28 +247,24 @@ Reddit Analyzerin tietokannan rakenne on seuraava:
 | `subscriptions` | Sisältää käyttäjien tekemät subreddit-tilaukset ja mm. valitun analyysityypin. | 
 | `subscription_data` | Sisältää tilausten pohjalta tuotetut analyysitulokset. Tulosten muoto vaihtelee analyysityypin mukaan: `topics`-analyysi sisältää aihemallinnuksen ja aihekohtaisen sentimenttianalyysin, ja `posts`-analyysi sisältää postauskohtainen sentimenttianalyysin. |
 
-Tietokantayhteyksiä hallitaan backendissa pääasiassa erillisen tietokantakerroksen kautta, joka tarjoaa yleiset funktiot esimerkiksi datan tallennukseen, hakuun ja päivitykseen. Tämä mahdollistaa keskitetyn tietokannan hallinnan ja toivon mukaan helpottaa testien toteutusta. Testauksessa käytetään oikean tietokannan sijaan testitietokantaa, joka toteutetaan **Mongomock**in avulla.
+Tietokantayhteyksiä hallitaan backendissa erillisen tietokantakerroksen kautta, joka tarjoaa yleiset funktiot esimerkiksi datan tallennukseen, hakuun ja päivitykseen. Tämä mahdollistaa keskitetyn tietokannan hallinnan ja toivon mukaan helpottaa testien toteutusta. 
+
+On hyvä huomioida, että testaus **ei perustu** tuotantotietokannan dataan, vaan testauksessa käytetään erillistä testitietokantaa (*Mongomock*). Yllä olevan tietokantakuvauksen tarkoitus on auttaa hahmottamaan sovelluksen datavirtoja ja toimintaa.
 
 ### Testien priorisointi
 
-Testit priorisoidaan siten, että sovelluksen **ydintoiminnot** varmistetaan ensin, ja vähemmän kriittiset osat testataan myöhemmin. Osa-alueiden prioriteettijärjestys on seuraava:
+Testitapauksia ja testejä priorisoidaan **riskilähtöisesti** niin, että sovelluksen ydintoiminnot varmistetaan ensin, ja vähemmän kriittiset osat testataan myöhemmin. Osa-alueiden prioriteettijärjestys on seuraava:
 1. **Tietokantayhteydet**
 2. **REST API**
 3. **Käyttäjähallinta ja autentikointi**
 
 Tietokanta on sovelluksen kriittisin osa, koska kaikki analysoitu data ja käyttäjätiedot kulkevat sen kautta. Ilman toimivaa tietokantaa sovelluksen ydintoiminnot eivät ole käytettävissä, ja frontend jäisi käytännössä tyhjäksi. REST API on toiseksi tärkein osa, sillä frontendin toiminta ja datan käsittely riippuvat siitä. Käyttäjähallinta tuo sovellukseen lisäominaisuuksia, mutta ei ole käytön kannalta välttämätöntä, joten se on prioriteettilistalla alempana. 
 
-Myös yksittäisille **testitapauksille** annetaan prioriteettiluokitus, kuten **korkea, keskitason tai matala**, sen mukaan, kuinka tärkeä testi on sovelluksen ydintoimintojen varmistamisen kannalta.
+Myös yksittäisille **testitapauksille** annetaan prioriteettiluokitus, kuten **korkea, keskitaso tai matala**, sen mukaan, kuinka tärkeä testi on sovelluksen ydintoimintojen varmistamisen kannalta.
 
 Täten testejä priorisoidaan kahdella tasolla:
 1. **Osa-alueen kriittisyys** - määrittää, missä järjestyksessä sovelluksen osia testataan (tietokanta → REST API → käyttäjähallinta)
 2. **Testitapausten kriittisyys** - määrittää, missä järjestyksessä testejä suoritetaan saman osa-alueen sisällä (edeten korkeimmasta prioriteetista matalimpaan)
-
-### Testauksen lähestymistapa
-
-Testauksessa noudatetaan **"testit ensin, refaktorointi jälkeen"** -periaatetta: testit kirjoitetaan ensin kaikille keskeisille toiminnoille, vaikka ne aluksi epäonnistuisivat, ja korjaukset toteutetaan lopuksi testien ohjaamana. Toiveena on, että tämä lähestymistapa auttaisi antamaan selkeän kuvan sovelluksen ongelmakohdista. Mikäli lähestymistapa osoittautuu liian haastavaksi tai aikaa vieväksi, voidaan siirtyä perinteisempään menetelmään, jossa refaktorointi ja testaus tehdään rinnakkain.
-
-Testauksessa hyödynnetään **pytest**iä yksikkö- ja integraatiotestien toteutukseen sekä **Allure Report**ia testitulosten visualisointiin. **Mongomock**ia käytetään tietokantatoimintojen simuloimiseen, jotta testit voidaan suorittaa ilman vaikutusta tuotantotietokantaan. Yksikkötesteillä varmistetaan yksittäisten funktioiden ja metodien toiminta, ja integraatiotesteillä testataan eri komponenttien, kuten REST API:n ja tietokannan, yhteistoimintaa.
 
 ### Testiympäristö
 
@@ -303,7 +310,7 @@ Tietokantatestit tulevat olemaan (todennäköisesti) yksikkötestejä. Tietokant
 
 
 #### TC-02 - Data haetaan tietokannasta
-**Kuvaus**: Testaa `fetch_data_from_collection(collection, filter=None)` -funktion toimintaa, varmistaen että data **haku toimii oikein** ja virhetilanteet käsitellään asianmukaisesti.<br>
+**Kuvaus**: Testaa `fetch_data_from_collection(collection, filter=None)` -funktion toimintaa, varmistaen että datan **haku toimii oikein** ja virhetilanteet käsitellään asianmukaisesti.<br>
 **Prioriteetti**: korkea
 
 | # | Testivaihe | Tavoite | Syöte tai parametri | Odotettu tulos |
@@ -350,7 +357,7 @@ Tietokantatestit tulevat olemaan (todennäköisesti) yksikkötestejä. Tietokant
 | 1 | Hae uusimmat dokumentit ilman `type`-filtteriä | Varmistaa, että uusimmat dokumentit palautetaan oikein | Validi `subreddit` (vastaa testidataa) | Palauttaa dokumentin uusimmalla timestampilla |
 | 2 | Hae uusimmat dokumentit `type`-filtterin kanssa | Varmistaa, että analyysityypin filtteriöinti toimii | Validi `subreddit` ja `type` (vastaa testidataa) | Palauttaa dokumentin uusimmalla timestampilla ja oikealla analyysityypillä |
 | 3 | Hae dokumentteja subredditistä, jota ei ole olemassa | Varmistaa, että olemattomasta subredditistä haku käsitellään oikein | Invalidi `subreddit` | Tyhjä lista | 
-| 4 | Hae virheellisellä `type`-parametrilla | Varmistaa, että virheenkäsittely toimii | Invalidi `type`, eli joku muu kuin *posts* tai *topics* | `ValueError` |
+| 4 | Hae virheellisellä `type`-parametrilla | Varmistaa, että virheenkäsittely toimii | Invalidi `type`, eli joku muu kuin *posts* tai *topics* | `ValueError` tai vastaava |
 
 
 #### TC-06 - Postausmäärien laskeminen valitulla aikavälillä
@@ -362,7 +369,7 @@ Tietokantatestit tulevat olemaan (todennäköisesti) yksikkötestejä. Tietokant
 |---|------------|---------|---------------------|----------------|
 | 1 | Hae postaukset olemassaolevalle subredditille | Varmistaa, että postausmäärät lasketaan oikein | Validi `subreddit` ja `number_of_days` | Palauttaa listan postausmääristä, ja määrät ovat oikein |
 | 2 | Hae postaukset subredditille, jota ei ole olemassa | Varmistaa, että olemattomasta subredditistä haku käsitellään oikein | Invalidi `subreddit` | Tyhjä lista |
-| 3 | Hae virheellisellä `number_of_days`-parametrilla | Varmistaa, että virheenkäsittely toimii | Invalidi `number_of_days`, esim. negatiivinen luku | `ValueError` | 
+| 3 | Hae virheellisellä `number_of_days`-parametrilla | Varmistaa, että virheenkäsittely toimii | Invalidi `number_of_days`, esim. negatiivinen luku | `ValueError` tai vastaava | 
 
 
 #### TC-07 - Suosituimpien topicien haku valitulla aikavälillä
@@ -374,8 +381,93 @@ Tietokantatestit tulevat olemaan (todennäköisesti) yksikkötestejä. Tietokant
 |---|------------|---------|---------------------|----------------|
 | 1 | Hae suosituimmat topicit olemassaolevalle subredditille | Varmistaa, että suosituimmat topicit lasketaan oikein | Validi `subreddit`, `number_of_days` ja `limit` | Palauttaa listan topiceja oikeassa järjestyksessä, topicien määrä == limit |
 | 2 | Hae suosituimmat topicit subredditille, jota ei ole olemassa | Varmistaa, että olemattomasta subredditistä haku käsitellään oikein | Invalidi `subreddit` | Tyhjä lista |
-| 3 | Hae suurella `limit`-arvolla | Varmistaa, että funktio palauttaa kaikki saatavilla olevat topicit eikä virhettä synny | Validi `subreddit`, suuri `limit` | Kaikki suosituimmat topicit, ja määrä < `limit` | 
-| 4 | Hae virheellisellä `number_of_days`-parametrilla | Varmistaa, että virheenkäsittely toimii | Invalidi `number_of_days`, esim. negatiivinen luku | `ValueError` |
+| 3 | Hae suurella `limit`-arvolla | Varmistaa, että funktio palauttaa kaikki saatavilla olevat topicit eikä virhettä synny | Validi `subreddit`, suuri `limit` | Palauttaa kaikki suosituimmat topicit, ja määrä < `limit` | 
+| 4 | Hae virheellisellä `number_of_days`-parametrilla | Varmistaa, että virheenkäsittely toimii | Invalidi `number_of_days`, esim. negatiivinen luku | `ValueError` tai vastaava |
+
+<p align="right"><a href="#seminaarityö-flask-backendin-testausta">⬆️</a></p>
+
+
+### REST API- ja käyttäjähallintatestit
+
+REST API -testit toteutetaan testausuunnitelman mukaisessa prioriteettijärjestyksessä. Aluksi varmistetaan sovelluksen perustoiminnot, jotka ovat kaikkien käyttäjien saatavilla ilman kirjautumista. Tämän jälkeen testataan käyttäjähallinta (kuten kirjautuminen ja rekisteröinti), ja lopuksi kirjautumista vaativat toiminnot, varmistaen samalla, että virhetilanteet käsitellään oikein.
+
+*Kaikki endpointit ja niiden tarkemmat kuvaukset on listattu [testaussuunnitelman](#testaussuunnitelma) osiossa "Testattavat osa-alueet".*
+
+### A. Julkiset toiminnot (ei vaadi kirjautumista)
+
+#### TC-08 - Hae lista subredditeistä
+**Kuvaus**: Testaa `/api/subreddits`-endpointin toimintaa varmistaen, että se **palauttaa listan** saatavilla olevista **subredditeistä** ja käsittelee virhetilanteet asianmukaisesti.<br>
+**Prioriteetti**: korkea
+
+| # | Testivaihe | Tavoite | Syöte tai parametri | Odotettu tulos |
+|---|------------|---------|---------------------|----------------|
+| 1 | Hae lista subredditeistä | Varmistaa, että lista palautuu oikein | - | Status `200 OK` ja subredditit listana | 
+| 2 | Tarkista listan sisältö | Varmistaa, että subredditit vastaavat config-määrittelyjä | - | Listan subredditit vastaavat `Config.SUBREDDITS` sisältöä |
+| 3 | Hae lista subredditeistä, kun config puuttuu | Varmistaa, että virhetilanne käsitellään oikein | Poista `Config.SUBREDDITS` | Status `500 Internal Service Error` tai vastaava | 
+
+
+#### TC-09 - Hae lista maakohtaisista subredditeistä
+**Kuvaus**: Testaa `/api/subreddits/countries`-endpointin toimintaa varmistaen, että se **palauttaa listan** saatavilla olevista **maakohtaisista subredditeistä** ja käsittelee virhetilanteet asianmukaisesti.<br>
+**Prioriteetti**: korkea
+
+| # | Testivaihe | Tavoite | Syöte tai parametri | Odotettu tulos |
+|---|------------|---------|---------------------|----------------|
+| 1 | Hae lista subredditeistä | Varmistaa, että lista palautuu oikein | - | Status `200 OK` ja subredditit listana | 
+| 2 | Tarkista listan sisältö | Varmistaa, että subredditit vastaavat config-määrittelyjä | - | Listan subredditit vastaavat `Config.COUNTRY_SUBREDDITS` sisältöä |
+| 3 | Hae lista subredditeistä, kun config puuttuu | Varmistaa, että virhetilanne käsitellään oikein | Poista `Config.COUNTRY_SUBREDDITS` | Status `500 Internal Service Error` tai vastaava | 
+| 4 | Tarkista kirjautumisen tarve | Varmistaa, että osa subredditeistä on merkitty kirjautumista vaativiksi | - | Jokaisessa listan kohdassa on kenttä `login_required`, joka on 0 tai 1 |
+
+
+#### TC-10 - Hae trendianalyysin tulokset
+**Kuvaus**: Testaa `/api/topics/latest/<subreddit>`-endpointin toimintaa varmistaen, että se **palauttaa uusimmat analyysitulokset** valitulle subredditille ja käsittelee virhetilanteet asianmukaisesti.<br>
+**Prioriteetti**: korkea
+
+| # | Testivaihe | Tavoite | Syöte tai parametri | Odotettu tulos |
+|---|------------|---------|---------------------|----------------|
+| 1 | Hae analyysitulokset olemassaolevalle subredditille | Varmistaa, että endpoint palauttaa uusimmat tulokset oikein | Validi `subreddit` | Palauttaa listana tulokset, joissa on tuorein `timestamp` |
+| 2 | Hae analyysitulokset subredditille, jota ei ole olemassa | Varmistaa, että virheenkäsittely toimii | Invalidi `subreddit` | Status `404 Not Found` tai vastaava |
+| 3 | Tarkista datan sisältö | Varmistaa, että data vastaa tietokannan sisältöä | Validi `subreddit` | JSON sisältää odotetut kentät (label, posts, subreddit, timestamp jne.) |
+
+
+#### TC-11 - Hae maakohtaisen analyysin tulokset
+**Kuvaus**: Testaa `/api/countries/latest/<subreddit>`-endpointin toimintaa varmistaen, että se **palauttaa uusimmat analyysitulokset** valitulle maakohtaiselle subredditille ja käsittelee virhetilanteet asianmukaisesti.<br>
+**Prioriteetti**: korkea
+
+| # | Testivaihe | Tavoite | Syöte tai parametri | Odotettu tulos |
+|---|------------|---------|---------------------|----------------|
+| 1 | Hae analyysitulokset olemassaolevalle subredditille | Varmistaa, että endpoint palauttaa uusimmat tulokset oikein | Validi `subreddit` | Palauttaa listana tulokset, joissa on tuorein `timestamp` |
+| 2 | Hae analyysitulokset subredditille, jota ei ole olemassa | Varmistaa, että virheenkäsittely toimii | Invalidi `subreddit` | Status `404 Not Found` tai vastaava |
+| 3 | Tarkista datan sisältö | Varmistaa, että data vastaa tietokannan sisältöä | Validi `subreddit` | JSON sisältää odotetut kentät (country, posts, requiresLogin jne.) |
+
+
+#### TC-12 - Hae trendianalyysin postausmäärien tilastot
+**Kuvaus**: Testaa `/api/statistics/<subreddit>/<days>`-endpointin toimintaa varmistaen, että se **palauttaa postausmäärien tilastot** valitulle subredditille ja käsittelee virhetilanteet asianmukaisesti.<br>
+**Prioriteetti**: keskitaso
+
+| # | Testivaihe | Tavoite | Syöte tai parametri | Odotettu tulos |
+|---|------------|---------|---------------------|----------------|
+| 1 | Hae tilastot olemassaolevalle subredditille | Varmistaa, että endpoint palauttaa tilastot oikein | Validi `subreddit` | Palauttaa tilastot listana |
+| 2 | Hae tilastot subredditille, jota ei ole olemassa | Varmistaa, että virheenkäsittely toimii | Invalidi `subreddit` | Status `404 Not Found` tai vastaava |
+| 3 | Tarkista datan sisältö | Varmistaa, että sisältö on oikeassa muodossa | Validi `subreddit` | JSON sisältää odotetut kentät (_id, daily (`[{}]`), total_posts) |
+
+
+#### TC-13 - Hae trendianalyysin tilastot suosituimmille topiceille
+**Kuvaus**: Testaa `/api/statistics/topics/<subreddit>/<days>/<limit>`-endpointin toimintaa varmistaen, että se **palauttaa suosituimpien topicien tilastot** valitulle subredditille ja käsittelee virhetilanteet asianmukaisesti.<br>
+**Prioriteetti**: keskitaso
+
+| # | Testivaihe | Tavoite | Syöte tai parametri | Odotettu tulos |
+|---|------------|---------|---------------------|----------------|
+| 1 | Hae tilastot olemassaolevalle subredditille | Varmistaa, että endpoint palauttaa tilastot oikein | Validi `subreddit` | Palauttaa tilastot listana |
+| 2 | Hae tilastot subredditille, jota ei ole olemassa | Varmistaa, että virheenkäsittely toimii | Invalidi `subreddit` | Status `404 Not Found` tai vastaava |
+| 3 | Tarkista datan sisältö | Varmistaa, että sisältö on oikeassa muodossa | Validi `subreddit` | JSON sisältää odotetut kentät (_id, topics (`[{}]`)) |
+
+
+### B. Käyttäjähallinta (autentikointi)
+
+
+### C. Käyttäjän lisäominaisuudet (vaatii kirjautumisen)
+
+
 
 <p align="right"><a href="#seminaarityö-flask-backendin-testausta">⬆️</a></p>
 
