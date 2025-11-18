@@ -7,6 +7,8 @@ Tässä seminaarityössä tutustun Flask-backendin testaukseen osana Ohjelmistop
 - [Testauksen perusteet](#testauksen-perusteet)
 - [Testaussuunnitelma](#testaussuunnitelma)
 - [Testitapaukset](#testitapaukset)
+- [Testiympäristön pystytys](#testiympäristön-pystytys)
+- [Testien ajaminen](#testien-ajaminen)
 - [Lähteet](#lähteet)
 - [Tekoälyn käyttö](#tekoälyn-käyttö-työn-toteutuksessa)
 
@@ -393,7 +395,7 @@ REST API -testit toteutetaan testausuunnitelman mukaisessa prioriteettijärjesty
 
 *Kaikki endpointit ja niiden tarkemmat kuvaukset on listattu [testaussuunnitelman](#testaussuunnitelma) osiossa "Testattavat osa-alueet".*
 
-### A. Julkiset toiminnot (ei vaadi kirjautumista)
+### Julkiset toiminnot (ei vaadi kirjautumista)
 
 #### TC-08 - Hae lista subredditeistä
 **Kuvaus**: Testaa `/api/subreddits`-endpointin toimintaa varmistaen, että se **palauttaa listan** saatavilla olevista **subredditeistä** ja käsittelee virhetilanteet asianmukaisesti.<br>
@@ -461,20 +463,161 @@ REST API -testit toteutetaan testausuunnitelman mukaisessa prioriteettijärjesty
 | 2 | Hae tilastot subredditille, jota ei ole olemassa | Varmistaa, että virheenkäsittely toimii | Invalidi `subreddit` | Status `404 Not Found` tai vastaava |
 | 3 | Tarkista datan sisältö | Varmistaa, että sisältö on oikeassa muodossa | Validi `subreddit` | JSON sisältää odotetut kentät (_id, topics (`[{}]`)) |
 
+> [!NOTE]
+> Tässä kohtaa huomasin, että suunniteltuja testejä on jo merkittävä määrä (+40kpl) ja projektia on jäljellä 6 päivää. Jäljellä oleva aikataulu ei realistisesti mahdollista kaikkien testitapausten perusteellista suunnittelua ja toteutusta.
+>
+> Näen parhaaksi aloittaa tässä vaiheessa testien toteutuksen varmistaakseni, että kriittiset ja prioriteetiltaan tärkeimmät testit ehditään implementoida ennen projektin määräaikaa. Mikäli aikaa jää, palaan täydentämään puuttuvia testitapauksia.
 
-### B. Käyttäjähallinta (autentikointi)
-
-
-### C. Käyttäjän lisäominaisuudet (vaatii kirjautumisen)
-
-
+Suunnitellut testitapaukset:
+- **Käyttäjähallinta (autentikointi)**
+- **Käyttäjän lisäominaisuudet (vaatii kirjautumisen)**
 
 <p align="right"><a href="#seminaarityö-flask-backendin-testausta">⬆️</a></p>
 
+## Testiympäristön pystytys
 
+### 1. Allure Reportin asennus
+Jotta Allure Reportia voi käyttää projektissa, se täytyy ensin asentaa omalle koneelle. Tämä käy ilmi esim. Allure Reportin [GitHub-sivulta](https://github.com/allure-framework/allure2). Suoritetaan asennus Alluren ohjeiden mukaan Windowsille:
+1. Asennetaan [Scoop](https://scoop.sh/) (komentorivin asennusohjelma) PowerShellillä:
+```
+Set-ExecutionPolicy RemoteSigned -scope CurrentUser
+Invoke-RestMethod -Uri https://get.scoop.sh | Invoke-Expression
+```
+2. Asennetaan Allure Scoopin avulla:
+```
+scoop install allure
+```
+
+### 2. Riippuvuuksien asentaminen
+Seuraavaksi asennetaan testauksessa tarvittavat riippuvuudet Reddit Analyzeriin:
+```
+pip install pytest mongomock allure-pytest
+```
+
+- [pytest](https://docs.pytest.org/en/stable/) - Pythonin testikehys
+- [mongomock](https://github.com/mongomock/mongomock) - tietokannan mockaukseen
+- [allure-pytest](https://allurereport.org/docs/pytest/) - Alluren pytest-laajennos
+
+### 3. Projektin alustaminen
+Luodaan testeille oma kansio nimeltä **tests** ja alustetaan se konfiguraatiotiedostolla nimeltä `conftest.py`, mukaillen Flaskin [tutoriaalia](https://flask.palletsprojects.com/en/stable/tutorial/tests/). Tiedostossa määritellään *fixturet*, jotka luovat sovelluksen testimoodissa.
+
+> ChatGPT:n tiivistelmä fixtureista: Pytestin **fixture** on "valmistelufunktio", joka luo testissä käytettävän resurssin, kuten testisovelluksen tai tietokannan. Fixture palauttaa resurssin testille, ja se voidaan jakaa useiden testien kesken.
+> 
+> Lisää tietoa fixtureista löytyy esimerkiksi pytestin [dokumentaatiosta](https://docs.pytest.org/en/7.4.x/explanation/fixtures.html).
+
+Tutoriaalin esimerkki ei suoraan sovi meidän projektiimme, koska `app` luodaan hieman eri tavalla. Siksi joudumme soveltamaan vähän:
+```python
+@pytest.fixture
+def app():
+    """ Luo Flask-sovelluksen testauskonfiguraatioilla """
+    app = create_app()
+    app.config["TESTING"] = True
+    app.config["JWT_SECRET_KEY"] = "test-secret"
+    yield app
+
+@pytest.fixture
+def client(app):
+    """ Mahdollistaa HTTP-kutsujen simuloinnin testeissä"
+    return app.test_client()
+```
+
+Tutoriaalissa on käytössä eri tietokanta (SQlite) ja tietokanta määritellään eri tavalla kuin Reddit Analyzerissa, joten myös testitietokannan alustuksen suhteen täytyy soveltaa.
+
+Reddit Analyzerissa tietokantayhteyttä hoidetaan *service*-kansion *db*-tiedostossa seuraavasti:
+```python
+def connect_db():
+    try:
+        uri = os.getenv("ATLAS_CONNECTION_STR")
+        if not uri:
+            raise ValueError("ATLAS_CONNECTION_STR is not set")
+        
+        client = MongoClient(uri)
+        db = client.reddit
+        return client, db
+    except Exception as e:
+        raise ConnectionError(f"Could not connect to database: {e}")
+```
+Sitten tätä funktiota kutsutaan tietokantaoperaatioita suorittavista funktiosta tähän tapaan:
+```python
+def save_data_to_database(data_to_save, collection):
+    if not isinstance(data_to_save, (list, dict)):
+        raise TypeError("Data to save must be a list or a dictionary")
+
+    """ Yhdistetään tietokantaan apufunktion kautta """
+    client, db = connect_db()
+    coll = db[collection]
+
+    try:
+        if isinstance(data_to_save, list):
+            coll.insert_many(data_to_save)
+        elif isinstance(data_to_save, dict):
+            coll.insert_one(data_to_save)
+    except Exception as e:
+        raise ConnectionError(f"Database error: {e}")
+    finally:
+        client.close()
+```
+
+Nyt katsoessa näitä funktioita mietin, onko tämä tapa tietokantayhteyden hoitamiseen aivan ideaali. Testauksen kannalta on haastavaa, että jokaisessa tietokantafunktiossa yritetään yhdistää oikeaan tietokantaan. Tästä sain idean, että voisin yrittää korvata `ATLAS_CONNECTION_STR`-arvon jotenkin niin, että yhdistetään oikean tietokannan sijasta testitietokantaan. En löytänyt tästä paljoakaan tietoa netistä, joten päädyin lopulta käyttämään apuna ChatGPT:tä. ChatGPT vinkkasi, että tähän voisi sopia pytestin [monkeypatch](https://docs.pytest.org/en/7.4.x/how-to/monkeypatch.html)-fixture, jonka metodeja voi käyttää **patchaamaan** tai korvaamaan arvoja tai toimintoja testausta varten. Tähän yhteyteen sopii monkeypatchin **setenv**-attribuutti. Lisätään testitietokanta `conftest`-tiedostoon:
+```python
+@pytest.fixture
+def mock_db(monkeypatch):
+    monkeypatch.setenv("ATLAS_CONNECTION_STR", "mongodb://mock")
+    with mock.patch("app.services.db.MongoClient") as mock_client_class:
+        mock_client = mongomock.MongoClient()
+        mock_client_class.return_value = mock_client
+        client, db = connect_db()
+        yield client, db
+```
+Tässä siis korvataan `ATLAS_CONNECTION_STR` testaus-URIlla, ja `MongoClient` patchataan käyttämään `mongomock`-instanssia. Näin kaikki tietokantayhteydet testien aikana ohjautuvat testitietokantaan, eikä oikeaa tuotantotietokantaa käytetä vahingossa.
+
+<p align="right"><a href="#seminaarityö-flask-backendin-testausta">⬆️</a></p>
+
+## Testien ajaminen
+### 1. Testien ajaminen pytestillä
+- Aja kaikki testit:
+```
+pytest
+```
+- Aja tietyt testit:
+```
+pytest tests/test_module.py
+```
+
+### 2. Allure Reportin luominen
+- Aja testit ja tallenna tulokset:
+```
+pytest --alluredir=allure-results
+```
+- Generoi raportti ja avaa se selaimessa:
+```
+allure generate allure-results --clean -o allure-report
+allure open allure-report
+```
+
+### 3. Historiatietojen seuraaminen Allurella
+Allure Reportin avulla voi seurata testitulosten [historiatietoja](https://allurereport.org/docs/history-and-retries/#how-to-enable-history), mutta se ei tapahdu automaattisesti. Allure ei säilytä aiempien testiajojen tuloksia, ellei niitä siirretä talteen. Ideaalitilanteessa siirron voisi automatisoida esimerkiksi GitHub Actionsin kautta, mutta minulla ei ole juuri nyt aikaa perehtyä siihen. Tässä siis ohjeet historiatietojen siirtämiseen käsin:
+1. Luo raportti normaalisti (kohdan 2. ohjeiden mukaan)
+2. Poista vanha `allure-results`-kansio, jotta data ei sekoitu edellisten ajojen kanssa:
+```
+rm -r allure-results
+```
+2. Kopioi historiatiedot valmiin raportin hakemistosta seuraavaa testiä varten:
+```
+cp -r allure-report/history allure-results/history
+```
+3. Aja testit uudelleen ja luo uusi raportti (kohdan 2 ohjeilla).
+4. Raportti näyttää nyt myös edellisen ajon historiatiedot.
+
+> [!NOTE]
+> Jos unohtaa kopioida historiatiedot jollakin ajokerralla, kyseisen ajon tiedot eivät tule mukaan seuraavaan raporttiin. Aiemmin siirretty historia säilyy, kunhan `history`-kansio kopioidaan `allure-results`-hakemistoon ennen uuden raportin generointia.
+
+<p align="right"><a href="#seminaarityö-flask-backendin-testausta">⬆️</a></p>
 
 ## Lähteet
 - https://flask.palletsprojects.com/en/stable/testing/
+- https://dev.to/reritom/unit-testing-pymongo-flask-applications-with-mongomock-and-patches-1m23
+- https://flask.palletsprojects.com/en/stable/tutorial/tests/
 - https://www.mongodb.com/docs/atlas/
 - https://docs.pytest.org/en/stable/
 - https://github.com/mongomock/mongomock
@@ -486,3 +629,5 @@ REST API -testit toteutetaan testausuunnitelman mukaisessa prioriteettijärjesty
 ## Tekoälyn käyttö työn toteutuksessa
 
 Olen hyödyntänyt tekoälyä, kuten ChatGPT:tä, tekstien muotoilun apuna. Kirjoitan ensin kappaleen itse ja tarvittaessa pyydän tekoälyä ehdottamaan vaihtoehtoisia muotoiluja, joista sitten yhdistän osia omaan tekstiini. Sisällön olen kuitenkin tuottanut itse, enkä käytä tekoälyä tekstin suoraan generointiin.
+
+Käytin tekoälyä apuna myös testiympäristön suunnittelussa ja pystyttämisessä, eli esim. mitä kirjastoja täytyy ladata ja miten alustaa sovellus testausta varten. Minun oli vaikea aluksi ymmärtää, miten pytestin fixtureja käytetään Flask-sovelluksen käynnistämiseen testaustilassa, ja tekoäly oli hyvä apu tässä. Tekoäly auttoi myös pääsemään alkuun mongomockin kanssa.
