@@ -10,7 +10,6 @@ Tässä seminaarityössä tutustun Flask-backendin testaukseen osana Ohjelmistop
 - [Testauksen työkalut](#testauksen-työkalut)
 - [Testiympäristön pystytys](#testiympäristön-pystytys)
 - [Testien toteutus](#testien-toteutus)
-- [Testien ajaminen](#testien-ajaminen)
 - [Lähteet](#lähteet)
 - [Tekoälyn käyttö](#tekoälyn-käyttö-työn-toteutuksessa)
 
@@ -322,6 +321,7 @@ Tietokantatestit tulevat olemaan (todennäköisesti) yksikkötestejä. Tietokant
 | 1 | Hae kaikki dokumentit | Varmistaa, että kaikkien dokumenttien haku toimii normaalisti | Ei `filter`-parametria | Kaikki dokumentit palautetaan listana |
 | 2 | Hae dokumentit käyttäen filtteriä | Varmistaa, että haku palauttaa suodatetut dokumentit oikein | Validi `filter` | Palauttaa suodatinta vastaavat dokumentit listana | 
 | 3 | Hae dokumenttia, jota ei ole olemassa | Varmistaa, että haku palauttaa tyhjän listan, jos dokumenttia ei löydy | Invalidi `filter` (ei vastaa mitään dokumenttia) | Tyhjä lista |
+| 4 | Hae dokumenttia virheellisellä filtterillä | Varmistaa, että virheenkäsittely toimii | Invalidi `filter`, esim. merkkijono | `TypeError` |
 
 
 #### TC-03 - Dokumentin päivittäminen tietokannassa
@@ -478,6 +478,8 @@ Suunnitellut testitapaukset:
 
 ## Testauksen työkalut
 
+Tämä osio sisältää teoriaa ja koodiesimerkkejä työkaluista, joita testien toteuksessa käytetään.
+
 <details>
     <summary><strong>Pytest</strong></summary>
 
@@ -522,11 +524,11 @@ Lähteet:
 <details>
     <summary><strong>Allure Report</strong></summary>
 
-Allure Report on työkalu, jonka avulla voidaan esittää testitulokset visuaalisesti interaktiivisen HTML-sivun muodossa. Allure on yhteensopiva monien eri testikehysten, kuten **pytest**in, **Playwright**in ja **Selenium**in, kanssa. Raportti näyttää testien statukset, virheet, poikkeukset ja suoritusajat. Testejä voidaan organisoida eri tasoihin tai kategorioihin, ja niille voidaan määritellä esimerkiksi otsikoita, kuvauksia ja kriittisyysaste (*severity*).
+Allure Report on työkalu, jonka avulla voidaan esittää testitulokset visuaalisesti interaktiivisen HTML-sivun muodossa. Allure on yhteensopiva monien eri testikehysten, kuten **pytest**in, **Playwright**in ja **Jest**in, kanssa. Raportti näyttää testien statukset, virheet, poikkeukset ja suoritusajat. Testejä voidaan organisoida eri tasoihin tai kategorioihin, ja niille voidaan määritellä esimerkiksi otsikoita, kuvauksia ja kriittisyysaste (*severity*).
 
 > **Ohjeet Alluren käyttöönottoon löytyvät raportin osiosta [Testiympäristön pystytys](#1-allure-reportin-asennus).**
 
-[Dokumentaatiosta](https://allurereport.org/docs/pytest/#getting-started-with-allure-pytest) löytyi koodiesimerkki Alluren käytöstä pytest-ympäristössä. Kuten näkyy, testeille pystyy lisäämään paljon erilaista metadataa: 
+Alluren [dokumentaatiosta](https://allurereport.org/docs/pytest/#writing-tests) löytyy koodiesimerkkejä Alluren käytöstä pytest-ympäristössä. Tämä esimerkki havainnollistaa hyvin, miten paljon erilaista metadataa testeille pystyy lisäämään: 
 ```python
 import allure
 
@@ -547,15 +549,17 @@ Testasin Allurea omassa projektissani:
 @allure.epic("Database tests")
 @allure.suite("TC-01: Save data to database")
 @allure.sub_suite("Save one item")
-def test_save_one_document(mock_db):
+def test_save_one_document():
     ...
 ```
 
-Kuva havainnollistaa, miten testi organisoitiin raportissa käyttämieni @allure-annotaatioiden mukaisesti:
+Kuvasta näkyy, miten testi organisoitiin raportissa käyttämieni `@allure`-annotaatioiden mukaisesti:
 
 ![Allure oma esimerkki selaimessa](kuvat/allure-report-esimerkki-2.png)
 
+
 **Allure Report -raportin luominen**:
+
 - Aja testit ja tallenna tulokset:
 ```
 pytest --alluredir=allure-results
@@ -566,10 +570,53 @@ allure generate allure-results --clean -o allure-report
 allure open allure-report
 ```
 
+**Historiatietojen seuraaminen Allurella**:
+
+Allure Reportin avulla voi seurata testitulosten [historiatietoja](https://allurereport.org/docs/history-and-retries), mutta se ei tapahdu automaattisesti. Allure ei säilytä aiempien testiajojen tuloksia, ellei niitä siirretä talteen. Ideaalitilanteessa siirron voisi automatisoida esimerkiksi GitHub Actionsin kautta, mutta minulla ei ole juuri nyt aikaa perehtyä siihen. Tässä siis ohjeet historiatietojen siirtämiseen käsin:
+
+> Poistot ja kopioinnit voi tehdä komentoriviltä alla olevien ohjeiden mukaan, mutta itse olen usein hoitanut ne suoraan VS Coden käyttöliittymässä, koska se on mielestäni kätevämpää.
+
+1. Luo raportti normaalisti:
+```
+pytest --alluredir=allure-results
+allure generate allure-results --clean -o allure-report
+```
+**Tarkista**, että `allure-report`-kansioon ilmestyi `history`-kansio.
+
+2. Poista `allure-results`-kansio, jotta uusi data ei sekoitu edellisten ajojen kanssa:
+```
+rm -r allure-results  # Linux/macOS
+del /s /q allure-results  # Windows
+```
+
+3. Aja testit uudelleen:
+```
+pytest --alluredir=allure-results
+```
+
+4. Kopioi edellisen ajon historiatiedot `allure-report`-kansiosta `allure-results`-kansioon (**HUOM.** tämä on tehtävä ennen uuden Allure-raportin generointia, muuten edellisen ajon tiedot menetetään):
+```
+cp -r allure-report/history allure-results/history  # Linux/macOS
+xcopy /E /I allure-report\history allure-results\history  # Windows
+```
+
+5. Luo uusi raportti ja (halutessasi) avaa se selaimessa:
+```
+allure generate allure-results -o allure-report
+allure open allure-report
+```
+**Nyt raportin pitäisi näyttää myös edellisen ajon historiatiedot.**
+
+> *HUOM*: Jos unohtaa kopioida historiatiedot jollakin ajokerralla, kyseisen ajon tiedot eivät tule mukaan seuraavaan raporttiin. Aiemmin siirretty historia säilyy, kunhan `history`-kansio kopioidaan `allure-results`-hakemistoon **ENNEN** uuden raportin generointia.
+
+*Ohjeet historiatietojen poistamiseen ja kopioimiseen komentoriviltä generoitu ChatGPT:n avulla*.
+
+
 Lähteet: 
 - [Tulosten visualisointi](https://allurereport.org/docs/visual-analytics/)
 - Testiraportin organisointi: [1](https://allurereport.org/docs/gettingstarted-navigation/#improving-navigation-in-your-test-report) & [2](https://allurereport.org/docs/gettingstarted-readability/)
 - [Alluren käyttö pytestin kanssa](https://allurereport.org/docs/pytest/#getting-started-with-allure-pytest)
+- [Historiatietojen seuraaminen](https://allurereport.org/docs/history-and-retries/#how-to-enable-history)
 
 </details>
 
@@ -685,46 +732,7 @@ Olen suunnitellut 13 testitapausta, ja jos jokainen testivaihe vastaa yhtä test
 <p align="right"><a href="#seminaarityö-flask-backendin-testausta">⬆️</a></p>
 
 
-## Testien ajaminen
-### 1. Testien ajaminen pytestillä
-- Aja kaikki testit:
-```
-pytest
-```
-- Aja tietyt testit:
-```
-pytest tests/test_module.py
-```
 
-### 2. Allure Reportin luominen
-- Aja testit ja tallenna tulokset:
-```
-pytest --alluredir=allure-results
-```
-- Generoi raportti ja avaa se selaimessa:
-```
-allure generate allure-results --clean -o allure-report
-allure open allure-report
-```
-
-### 3. Historiatietojen seuraaminen Allurella
-Allure Reportin avulla voi seurata testitulosten [historiatietoja](https://allurereport.org/docs/history-and-retries/#how-to-enable-history), mutta se ei tapahdu automaattisesti. Allure ei säilytä aiempien testiajojen tuloksia, ellei niitä siirretä talteen. Ideaalitilanteessa siirron voisi automatisoida esimerkiksi GitHub Actionsin kautta, mutta minulla ei ole juuri nyt aikaa perehtyä siihen. Tässä siis ohjeet historiatietojen siirtämiseen käsin:
-1. Luo raportti normaalisti (kohdan 2. ohjeiden mukaan)
-2. Poista vanha `allure-results`-kansio, jotta data ei sekoitu edellisten ajojen kanssa:
-```
-rm -r allure-results
-```
-2. Kopioi historiatiedot valmiin raportin hakemistosta seuraavaa testiä varten:
-```
-cp -r allure-report/history allure-results/history
-```
-3. Aja testit uudelleen ja luo uusi raportti (kohdan 2 ohjeilla).
-4. Raportti näyttää nyt myös edellisen ajon historiatiedot.
-
-> [!NOTE]
-> Jos unohtaa kopioida historiatiedot jollakin ajokerralla, kyseisen ajon tiedot eivät tule mukaan seuraavaan raporttiin. Aiemmin siirretty historia säilyy, kunhan `history`-kansio kopioidaan `allure-results`-hakemistoon ennen uuden raportin generointia.
-
-<p align="right"><a href="#seminaarityö-flask-backendin-testausta">⬆️</a></p>
 
 
 ## Lähteet
