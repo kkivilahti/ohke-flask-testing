@@ -7,7 +7,9 @@ Tässä seminaarityössä tutustun Flask-backendin testaukseen osana Ohjelmistop
 - [Testauksen perusteet](#testauksen-perusteet)
 - [Testaussuunnitelma](#testaussuunnitelma)
 - [Testitapaukset](#testitapaukset)
+- [Testauksen työkalut](#testauksen-työkalut)
 - [Testiympäristön pystytys](#testiympäristön-pystytys)
+- [Testien toteutus](#testien-toteutus)
 - [Testien ajaminen](#testien-ajaminen)
 - [Lähteet](#lähteet)
 - [Tekoälyn käyttö](#tekoälyn-käyttö-työn-toteutuksessa)
@@ -474,6 +476,105 @@ Suunnitellut testitapaukset:
 
 <p align="right"><a href="#seminaarityö-flask-backendin-testausta">⬆️</a></p>
 
+## Testauksen työkalut
+
+<details>
+    <summary><strong>Pytest</strong></summary>
+
+Pytest on Pythonin suosittu testauskehys, jossa testit kirjoitetaan tavallisina funktioina ja testien onnistuminen tarkistetaan `assert`-väitteillä. Pytestin keskeisiä etuja ovat yksinkertainen syntaksi ja vähäinen määrä pakollista "boilerplate" koodia. Pytestin [dokumentaatiossa](https://docs.pytest.org/en/stable/how-to/assert.html) on seuraavia esimerkkejä testien kirjoittamisesta:
+```python
+def f():
+    return 3
+
+def test_function():
+    assert f() == 4
+```
+Tämä testi epäonnistuu, koska `f` palauttaa arvon 3, mutta testissä odotetaan arvoa 4. Jos odotusarvo muutetaan vastaamaan toteutusta, testi menee läpi:
+```python
+    assert f() == 3
+```
+
+Poikkeusten testaaminen onnistuu tähän tyyliin `pytest.raises` -kontekstilla:
+```python
+def test_zero_division():
+    with pytest.raises(ZeroDivisionError):
+        1 / 0
+```
+
+Pytest löytää testit automaattisesti kaikista tiedostoista, joiden nimi on muodossa `test_*.py` tai `*_test.py`. Testejä voidaan ajaa seuraavilla komennoilla:
+- Aja kaikki testit:
+```
+pytest
+```
+- Aja testit tietystä tiedostosta:
+```
+pytest tests/test_module.py
+```
+
+Testien valmistelua ja jaettujen resurssien hallintaa varten pytestissa voidaan käyttää **fixture**ja, jotka määritellään `conftest.py`-tiedostossa. Fixturen avulla voidaan luoda esimerkiksi testitietokanta, jota voidaan sitten käyttää testifunktioissa parametrina ilman erillistä importia.
+
+Lähteet:
+- [Testien kirjoittaminen ja assertin käyttö](https://docs.pytest.org/en/stable/how-to/assert.html)
+- [Testien ajaminen](https://docs.pytest.org/en/stable/getting-started.html#run-multiple-tests)
+- Fixturet: [1](https://docs.pytest.org/en/7.4.x/explanation/fixtures.html) & [2](https://flask.palletsprojects.com/en/stable/tutorial/tests/#setup-and-fixtures)
+</details>
+
+<details>
+    <summary><strong>Allure Report</strong></summary>
+
+Allure Report on työkalu, jonka avulla voidaan esittää testitulokset visuaalisesti interaktiivisen HTML-sivun muodossa. Allure on yhteensopiva monien eri testikehysten, kuten **pytest**in, **Playwright**in ja **Selenium**in, kanssa. Raportti näyttää testien statukset, virheet, poikkeukset ja suoritusajat. Testejä voidaan organisoida eri tasoihin tai kategorioihin, ja niille voidaan määritellä esimerkiksi otsikoita, kuvauksia ja kriittisyysaste (*severity*).
+
+> **Ohjeet Alluren käyttöönottoon löytyvät raportin osiosta [Testiympäristön pystytys](#1-allure-reportin-asennus).**
+
+[Dokumentaatiosta](https://allurereport.org/docs/pytest/#getting-started-with-allure-pytest) löytyi koodiesimerkki Alluren käytöstä pytest-ympäristössä. Kuten näkyy, testeille pystyy lisäämään paljon erilaista metadataa: 
+```python
+import allure
+
+@allure.title("Test Authentication")
+@allure.description("This test attempts to log into the website using a login and a password. Fails if any error happens.")
+@allure.tag("NewUI", "Essentials", "Authentication")
+@allure.severity(allure.severity_level.CRITICAL)
+@allure.label("owner", "John Doe")
+@allure.link("https://dev.example.com/", name="Website")
+@allure.issue("AUTH-123")
+@allure.testcase("TMS-456")
+def test_authentication():
+    ...
+```
+
+Testasin Allurea omassa projektissani:
+```python
+@allure.epic("Database tests")
+@allure.suite("TC-01: Save data to database")
+@allure.sub_suite("Save one item")
+def test_save_one_document(mock_db):
+    ...
+```
+
+Kuva havainnollistaa, miten testi organisoitiin raportissa käyttämieni @allure-annotaatioiden mukaisesti:
+
+![Allure oma esimerkki selaimessa](kuvat/allure-report-esimerkki-2.png)
+
+**Allure Report -raportin luominen**:
+- Aja testit ja tallenna tulokset:
+```
+pytest --alluredir=allure-results
+```
+- Generoi raportti ja avaa se selaimessa:
+```
+allure generate allure-results --clean -o allure-report
+allure open allure-report
+```
+
+Lähteet: 
+- [Tulosten visualisointi](https://allurereport.org/docs/visual-analytics/)
+- Testiraportin organisointi: [1](https://allurereport.org/docs/gettingstarted-navigation/#improving-navigation-in-your-test-report) & [2](https://allurereport.org/docs/gettingstarted-readability/)
+- [Alluren käyttö pytestin kanssa](https://allurereport.org/docs/pytest/#getting-started-with-allure-pytest)
+
+</details>
+
+<p align="right"><a href="#seminaarityö-flask-backendin-testausta">⬆️</a></p>
+
 ## Testiympäristön pystytys
 
 ### 1. Allure Reportin asennus
@@ -498,12 +599,8 @@ pip install pytest mongomock allure-pytest
 - [mongomock](https://github.com/mongomock/mongomock) - tietokannan mockaukseen
 - [allure-pytest](https://allurereport.org/docs/pytest/) - Alluren pytest-laajennos
 
-### 3. Projektin alustaminen
+### 3. Projektin alustaminen testaukselle
 Luodaan testeille oma kansio nimeltä **tests** ja alustetaan se konfiguraatiotiedostolla nimeltä `conftest.py`, mukaillen Flaskin [tutoriaalia](https://flask.palletsprojects.com/en/stable/tutorial/tests/). Tiedostossa määritellään *fixturet*, jotka luovat sovelluksen testimoodissa.
-
-> ChatGPT:n tiivistelmä fixtureista: Pytestin **fixture** on "valmistelufunktio", joka luo testissä käytettävän resurssin, kuten testisovelluksen tai tietokannan. Fixture palauttaa resurssin testille, ja se voidaan jakaa useiden testien kesken.
-> 
-> Lisää tietoa fixtureista löytyy esimerkiksi pytestin [dokumentaatiosta](https://docs.pytest.org/en/7.4.x/explanation/fixtures.html).
 
 Tutoriaalin esimerkki ei suoraan sovi meidän projektiimme, koska `app` luodaan hieman eri tavalla. Siksi joudumme soveltamaan vähän:
 ```python
@@ -517,7 +614,7 @@ def app():
 
 @pytest.fixture
 def client(app):
-    """ Mahdollistaa HTTP-kutsujen simuloinnin testeissä"
+    """ Mahdollistaa HTTP-kutsujen simuloinnin testeissä """
     return app.test_client()
 ```
 
@@ -571,7 +668,22 @@ def mock_db(monkeypatch):
 ```
 Tässä siis korvataan `ATLAS_CONNECTION_STR` testaus-URIlla, ja `MongoClient` patchataan käyttämään `mongomock`-instanssia. Näin kaikki tietokantayhteydet testien aikana ohjautuvat testitietokantaan, eikä oikeaa tuotantotietokantaa käytetä vahingossa.
 
+Jatkossa fixtureja voidaan hyödyntää testauksessa niin, että resurssi välitetään testifunktiolle funktion parametrina. Tässä on Flaskin [tutoriaalista](https://flask.palletsprojects.com/en/stable/tutorial/tests/#factory) esimerkki, jossa simuloidaan REST APIn toimintaa. Client-fixture välitetään funktion parametrina:
+```python
+def test_hello(client):
+    response = client.get('/hello')
+    assert response.data == b'Hello, World!'
+```
+
 <p align="right"><a href="#seminaarityö-flask-backendin-testausta">⬆️</a></p>
+
+
+## Testien toteutus
+
+Olen suunnitellut 13 testitapausta, ja jos jokainen testivaihe vastaa yhtä testiä, niin testejä on tulossa yli 40 kappaletta. En näe tarpeelliseksi eritellä jokaisen testin toteutusta yksityiskohtaisesti tässä työssä. Valitsen 2-3 testitapausta per testauksen osa-alue, ja selitän niiden ratkaisut tarkemmin. Kaikki toteutetut testit ovat kuitenkin nähtävissä projektin [tests](https://github.com/ohjelmistoprojekti-ii-reddit-app/reddit-app-backend/tree/testing/tests)-kansiossa.
+
+<p align="right"><a href="#seminaarityö-flask-backendin-testausta">⬆️</a></p>
+
 
 ## Testien ajaminen
 ### 1. Testien ajaminen pytestillä
@@ -613,6 +725,7 @@ cp -r allure-report/history allure-results/history
 > Jos unohtaa kopioida historiatiedot jollakin ajokerralla, kyseisen ajon tiedot eivät tule mukaan seuraavaan raporttiin. Aiemmin siirretty historia säilyy, kunhan `history`-kansio kopioidaan `allure-results`-hakemistoon ennen uuden raportin generointia.
 
 <p align="right"><a href="#seminaarityö-flask-backendin-testausta">⬆️</a></p>
+
 
 ## Lähteet
 - https://flask.palletsprojects.com/en/stable/testing/
