@@ -10,6 +10,7 @@ Tässä seminaarityössä tutustun Flask-backendin testaukseen osana Ohjelmistop
 - [Testauksen työkalut](#testauksen-työkalut)
 - [Testiympäristön pystytys](#testiympäristön-pystytys)
 - [Testien toteutus](#testien-toteutus)
+- [GitHub Actions -integraatio](#github-actions--integraatio)
 - [Lähteet](#lähteet)
 - [Tekoälyn käyttö](#tekoälyn-käyttö-työn-toteutuksessa)
 
@@ -602,7 +603,7 @@ xcopy /E /I allure-report\history allure-results\history  # Windows
 
 5. Luo uusi raportti ja (halutessasi) avaa se selaimessa:
 ```
-allure generate allure-results -o allure-report
+allure generate allure-results --clean -o allure-report
 allure open allure-report
 ```
 **Nyt raportin pitäisi näyttää myös edellisen ajon historiatiedot.**
@@ -733,6 +734,125 @@ Olen suunnitellut 13 testitapausta, ja jos jokainen testivaihe vastaa yhtä test
 
 
 
+## GitHub Actions -integraatio
+
+Seminaarityötä aloittaessani en pitänyt testien automatisointia **GitHub Actions**in avulla välttämättömänä, sillä projekti oli jo pitkällä ja jatkuvan integraation hyödyt olisivat korostuneet erityisesti kehityksen alkuvaiheessa. Testitulosten visualisointiin käytettävä `Allure Report` -työkalu osoittautui kuitenkin yllättävän monivaiheiseksi: se vaatii useita erillisiä asennuksia, ja raporttien tuottaminen edellyttää useiden komentojen ajamista oikeassa järjestyksessä. Lisäksi historiatiedot eivät päivity automaattisesti paikallisessa ajossa, vaan ne täytyy siirtää manuaalisesti testiajojen välillä.
+
+Tämän vuoksi testien ja raporttien automatisointi osoittautui luontevaksi seuraavaksi askeleeksi - sen avulla kaikki pääsisivät tarkastelemaan ajantasaisia testituloksia ilman lisätyötä. Alluren dokumentaatiosta löytyi GitHub Actions -integraatiota varten kattavat [ohjeet](https://allurereport.org/docs/integrations-github/), joita seuraamalla automatisoin raportin julkaisun **GitHub Pages**iin.
+
+### Workflown toteutus
+
+Toteutin workflown seuraamalla Alluren esimerkkiä. Workflow suorittaa testit, generoi Allure-raportin ja julkaisee sen `gh-pages`-branchiin:
+
+<details>
+    <summary><strong>Workflow</strong></summary>
+    
+```yml
+name: Run tests and publish report
+on:
+  push:
+    branches:
+      - main
+      - testing
+  workflow_dispatch:
+
+jobs:
+  test-and-report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Cache Python dependencies
+        uses: actions/cache@v4
+        continue-on-error: true
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: ${{ runner.os }}-pip-
+          
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Cache NLTK data
+        uses: actions/cache@v4
+        continue-on-error: true
+        with:
+          path: ~/nltk_data
+          key: ${{ runner.os }}-nltk-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: ${{ runner.os }}-nltk-
+
+      - name: Download NLTK data
+        run: python -m nltk.downloader punkt punkt_tab vader_lexicon
+
+      - name: Run tests
+        run: pytest --alluredir=allure-results
+
+      - name: Load test report history
+        uses: actions/checkout@v4
+        if: always()
+        continue-on-error: true
+        with:
+          ref: gh-pages
+          path: gh-pages
+
+      - name: Build test report
+        uses: simple-elf/allure-report-action@v1.13
+        if: always()
+        with:
+          gh_pages: gh-pages
+          allure_history: allure-history
+          allure_results: allure-results
+
+      - name: Publish test report
+        uses: peaceiris/actions-gh-pages@v3
+        if: always()
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: allure-history
+```
+
+</details>
+
+#### Keskeiset vaiheet
+1. **Ympäristön pystytys:** Pythonin ja riippuvuuksien asentaminen ja cachettaminen
+2. **Testien ajaminen:** pytest tuottaa testitulokset `allure-results`-kansioon
+3. **Historiatietojen hakeminen:** edellisen ajon tulokset haetaan `gh-pages`-branchista
+4. **Raportin luominen ja julkaisu:** testitulosten pohjalta generoidaan Allure-raportti ja se julkaistaan `gh-pages`-branchiin
+
+Workflow suoritetaan automaattisesti aina, kun `main`- tai `testing`-branchiin pushataan uusi commit. Lisäksi workflown voi ajaa manuaalisesti `workflow dispatch`-toiminnolla.
+
+### Repositorion konfiguraatiot
+Repositorioon täytyy tehdä asetuksia, jotta workflow ja GitHub Pages -julkaisu saadaan toimimaan:
+
+#### 1. GitHub Actions -luvat
+Workflow tarvitsee luku- ja kirjoitusoikeudet `gh-pages`-branchiin. Oikeudet voi määrittää GitHubin **Settings → Actions → General → Workflow permissions** -valikossa:
+
+![Workflown read-write luvat](kuvat/actions-read-write.png)
+---
+
+#### 2. GitHub Pages -asetukset
+Testiraportin julkaisemiseksi GitHub Pagesin kautta tulee lähdebranchiksi valita `gh-pages`. Asetus löytyy GitHubin **Settings → Pages** -valikosta
+
+![GitHub Pages lähde](kuvat/pages-konfiguraatio.png)
+---
+
+### Ongelmien ratkaisua 
+
+Vaikka seurasin ohjeita tarkasti, Actions-prosessi ei mennyt ensimmäisellä ajokerralla läpi:
+
+![Actions virhe](kuvat/actions-virhe.png)
+
+Pienen selvittelyn jälkeen kävi ilmi, että virhe johtui *allure-report-action*in väärästä versiosta (`v1.7`). Tästä oli [issue](https://github.com/simple-elf/allure-report-action/issues/72) actionin repositoriossa. Vinkkien avulla päivitin version uusimpaan versioon (`v1.13`), julkaisu onnistui ja raporttia pääsi viimein tarkastelemaan suoraan selaimessa:
+- [GitHub Pages](https://ohjelmistoprojekti-ii-reddit-app.github.io/reddit-app-backend)
+
+
+<p align="right"><a href="#seminaarityö-flask-backendin-testausta">⬆️</a></p>
 
 
 ## Lähteet
