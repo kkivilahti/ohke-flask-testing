@@ -299,7 +299,7 @@ Koska vaatimusmäärittelymme on vajavaista eikä esimerkiksi hyväksymiskriteer
 
 ### Tietokantatestit
 
-Tietokantatestit tulevat olemaan (todennäköisesti) yksikkötestejä. Tietokantamme data on moninaista, emmekä ole määritelleet skeemoja tai pakollisia arvoja, joten en aio keskittyä validoimaan datan eheyttä. Sen sijaan teen muutamia esimerkkidokumentteja ja -kokoelmia, joita simuloin testitietokannassa, varmistaakseni tietokantafunktioiden toiminnan.
+Tietokantatestit tulevat olemaan yksikkötestejä. Tietokantamme data on moninaista, emmekä ole määritelleet skeemoja tai pakollisia arvoja, joten en aio keskittyä validoimaan datan eheyttä. Sen sijaan teen muutamia esimerkkidokumentteja ja -kokoelmia, joita simuloin testitietokannassa, varmistaakseni tietokantafunktioiden toiminnan.
 
 #### TC-01 - Data tallennetaan tietokantaan
 **Kuvaus**: Testaa `save_data_to_database(data_to_save, collection)` -funktion toimintaa, varmistaen että data **tallentuu oikein** ja virhetilanteet käsitellään asianmukaisesti.<br>
@@ -348,7 +348,7 @@ Tietokantatestit tulevat olemaan (todennäköisesti) yksikkötestejä. Tietokant
 
 
 > [!NOTE]
-> Seuraavia analyysituloksia käsitteleviä testejä varten täytyy luoda hieman laajempi testidatasetti, joka kattaa erityyppiset analyysitulokset. Dataa täytyy tallettaa myös eri timestampeilla.
+> Seuraavia analyysituloksia käsitteleviä testejä varten täytyy luoda hieman yksityiskohtaisempi datasetti, joka sisältää erityyppisiä analyysituloksia ja timestampit.
 >
 > Selkeyden vuoksi analyysituloksia käsittelevät testit kannattaa erotella perustoimintoja (kuten tallennus, päivitys) testaavista testeistä omiin tiedostoihinsa.
 
@@ -388,6 +388,7 @@ Tietokantatestit tulevat olemaan (todennäköisesti) yksikkötestejä. Tietokant
 | 2 | Hae suosituimmat topicit subredditille, jota ei ole olemassa | Varmistaa, että olemattomasta subredditistä haku käsitellään oikein | Invalidi `subreddit` | Tyhjä lista |
 | 3 | Hae suurella `limit`-arvolla | Varmistaa, että funktio palauttaa kaikki saatavilla olevat topicit eikä virhettä synny | Validi `subreddit`, suuri `limit` | Palauttaa kaikki suosituimmat topicit, ja määrä < `limit` | 
 | 4 | Hae virheellisellä `number_of_days`-parametrilla | Varmistaa, että virheenkäsittely toimii | Invalidi `number_of_days`, esim. negatiivinen luku | `ValueError` tai vastaava |
+| 5 | Hae virheellisellä `limit`-parametrilla | Ensure error handling works | Invalidi `limit`, esim. negatiivinen luku | `ValueError` tai vastaava |
 
 <p align="right"><a href="#seminaarityö-flask-backendin-testausta">⬆️</a></p>
 
@@ -401,29 +402,17 @@ REST API -testit toteutetaan testausuunnitelman mukaisessa prioriteettijärjesty
 ### Julkiset toiminnot (ei vaadi kirjautumista)
 
 #### TC-08 - Hae lista subredditeistä
-**Kuvaus**: Testaa `/api/subreddits`-endpointin toimintaa varmistaen, että se **palauttaa listan** saatavilla olevista **subredditeistä** ja käsittelee virhetilanteet asianmukaisesti.<br>
+**Kuvaus**: Testaa `/api/subreddits`- ja `/api/subreddits/countries`-endpointien toimintaa varmistaen, että ne **palauttavat subredditit** oikein. Virhetilanteiden käsittely ei ole pakollista, koska subreddit-vaihtoehdot ovat staattisia.<br>
 **Prioriteetti**: korkea
 
 | # | Testivaihe | Tavoite | Syöte tai parametri | Odotettu tulos |
 |---|------------|---------|---------------------|----------------|
-| 1 | Hae lista subredditeistä | Varmistaa, että lista palautuu oikein | - | Status `200 OK` ja subredditit listana | 
-| 2 | Tarkista listan sisältö | Varmistaa, että subredditit vastaavat config-määrittelyjä | - | Listan subredditit vastaavat `Config.SUBREDDITS` sisältöä |
-| 3 | Hae lista subredditeistä, kun config puuttuu | Varmistaa, että virhetilanne käsitellään oikein | Poista `Config.SUBREDDITS` | Status `500 Internal Service Error` tai vastaava | 
+| 1 | Hae lista subredditeistä, joita käytetään trendianalyysiin | Varmistaa, että subredditit palautetaan oikein | - | Status `200 OK` ja oikeat subredditit listana | 
+| 2 |  Hae lista subredditeistä, joita käytetään maakohtaiseen analyysiin | Varmistaa, että subredditit palautetaan oikein | - | Status `200 OK` ja oikeat subredditit listana | 
+| 3 | Tarkista kirjautumisen tarve maakohtaisilta subredditeiltä | Varmistaa, että osa subredditeistä on merkitty kirjautumista vaativiksi | - | Jokaisessa listan kohdassa on kenttä `login_required`, joka on 0 tai 1 |
 
 
-#### TC-09 - Hae lista maakohtaisista subredditeistä
-**Kuvaus**: Testaa `/api/subreddits/countries`-endpointin toimintaa varmistaen, että se **palauttaa listan** saatavilla olevista **maakohtaisista subredditeistä** ja käsittelee virhetilanteet asianmukaisesti.<br>
-**Prioriteetti**: korkea
-
-| # | Testivaihe | Tavoite | Syöte tai parametri | Odotettu tulos |
-|---|------------|---------|---------------------|----------------|
-| 1 | Hae lista subredditeistä | Varmistaa, että lista palautuu oikein | - | Status `200 OK` ja subredditit listana | 
-| 2 | Tarkista listan sisältö | Varmistaa, että subredditit vastaavat config-määrittelyjä | - | Listan subredditit vastaavat `Config.COUNTRY_SUBREDDITS` sisältöä |
-| 3 | Hae lista subredditeistä, kun config puuttuu | Varmistaa, että virhetilanne käsitellään oikein | Poista `Config.COUNTRY_SUBREDDITS` | Status `500 Internal Service Error` tai vastaava | 
-| 4 | Tarkista kirjautumisen tarve | Varmistaa, että osa subredditeistä on merkitty kirjautumista vaativiksi | - | Jokaisessa listan kohdassa on kenttä `login_required`, joka on 0 tai 1 |
-
-
-#### TC-10 - Hae trendianalyysin tulokset
+#### TC-09 - Hae trendianalyysin tulokset
 **Kuvaus**: Testaa `/api/topics/latest/<subreddit>`-endpointin toimintaa varmistaen, että se **palauttaa uusimmat analyysitulokset** valitulle subredditille ja käsittelee virhetilanteet asianmukaisesti.<br>
 **Prioriteetti**: korkea
 
@@ -431,10 +420,10 @@ REST API -testit toteutetaan testausuunnitelman mukaisessa prioriteettijärjesty
 |---|------------|---------|---------------------|----------------|
 | 1 | Hae analyysitulokset olemassaolevalle subredditille | Varmistaa, että endpoint palauttaa uusimmat tulokset oikein | Validi `subreddit` | Palauttaa listana tulokset, joissa on tuorein `timestamp` |
 | 2 | Hae analyysitulokset subredditille, jota ei ole olemassa | Varmistaa, että virheenkäsittely toimii | Invalidi `subreddit` | Status `404 Not Found` tai vastaava |
-| 3 | Tarkista datan sisältö | Varmistaa, että data vastaa tietokannan sisältöä | Validi `subreddit` | JSON sisältää odotetut kentät (label, posts, subreddit, timestamp jne.) |
+| 3 | Tarkista datan sisältö | Varmistaa, että data vastaa tietokannan sisältöä | Validi `subreddit` | JSONin sisältö vastaa odotettua |
 
 
-#### TC-11 - Hae maakohtaisen analyysin tulokset
+#### TC-10 - Hae maakohtaisen analyysin tulokset
 **Kuvaus**: Testaa `/api/countries/latest/<subreddit>`-endpointin toimintaa varmistaen, että se **palauttaa uusimmat analyysitulokset** valitulle maakohtaiselle subredditille ja käsittelee virhetilanteet asianmukaisesti.<br>
 **Prioriteetti**: korkea
 
@@ -442,10 +431,10 @@ REST API -testit toteutetaan testausuunnitelman mukaisessa prioriteettijärjesty
 |---|------------|---------|---------------------|----------------|
 | 1 | Hae analyysitulokset olemassaolevalle subredditille | Varmistaa, että endpoint palauttaa uusimmat tulokset oikein | Validi `subreddit` | Palauttaa listana tulokset, joissa on tuorein `timestamp` |
 | 2 | Hae analyysitulokset subredditille, jota ei ole olemassa | Varmistaa, että virheenkäsittely toimii | Invalidi `subreddit` | Status `404 Not Found` tai vastaava |
-| 3 | Tarkista datan sisältö | Varmistaa, että data vastaa tietokannan sisältöä | Validi `subreddit` | JSON sisältää odotetut kentät (country, posts, requiresLogin jne.) |
+| 3 | Tarkista datan sisältö | Varmistaa, että data vastaa tietokannan sisältöä | Validi `subreddit` | JSONin sisältö vastaa odotettua |
 
 
-#### TC-12 - Hae trendianalyysin postausmäärien tilastot
+#### TC-11 - Hae trendianalyysin postausmäärien tilastot
 **Kuvaus**: Testaa `/api/statistics/<subreddit>/<days>`-endpointin toimintaa varmistaen, että se **palauttaa postausmäärien tilastot** valitulle subredditille ja käsittelee virhetilanteet asianmukaisesti.<br>
 **Prioriteetti**: keskitaso
 
@@ -453,10 +442,10 @@ REST API -testit toteutetaan testausuunnitelman mukaisessa prioriteettijärjesty
 |---|------------|---------|---------------------|----------------|
 | 1 | Hae tilastot olemassaolevalle subredditille | Varmistaa, että endpoint palauttaa tilastot oikein | Validi `subreddit` | Palauttaa tilastot listana |
 | 2 | Hae tilastot subredditille, jota ei ole olemassa | Varmistaa, että virheenkäsittely toimii | Invalidi `subreddit` | Status `404 Not Found` tai vastaava |
-| 3 | Tarkista datan sisältö | Varmistaa, että sisältö on oikeassa muodossa | Validi `subreddit` | JSON sisältää odotetut kentät (_id, daily (`[{}]`), total_posts) |
+| 3 | Tarkista datan sisältö | Varmistaa, että sisältö on oikeassa muodossa | Validi `subreddit` | JSONin sisältö vastaa odotettua |
 
 
-#### TC-13 - Hae trendianalyysin tilastot suosituimmille topiceille
+#### TC-12 - Hae trendianalyysin tilastot suosituimmille topiceille
 **Kuvaus**: Testaa `/api/statistics/topics/<subreddit>/<days>/<limit>`-endpointin toimintaa varmistaen, että se **palauttaa suosituimpien topicien tilastot** valitulle subredditille ja käsittelee virhetilanteet asianmukaisesti.<br>
 **Prioriteetti**: keskitaso
 
@@ -464,16 +453,42 @@ REST API -testit toteutetaan testausuunnitelman mukaisessa prioriteettijärjesty
 |---|------------|---------|---------------------|----------------|
 | 1 | Hae tilastot olemassaolevalle subredditille | Varmistaa, että endpoint palauttaa tilastot oikein | Validi `subreddit` | Palauttaa tilastot listana |
 | 2 | Hae tilastot subredditille, jota ei ole olemassa | Varmistaa, että virheenkäsittely toimii | Invalidi `subreddit` | Status `404 Not Found` tai vastaava |
-| 3 | Tarkista datan sisältö | Varmistaa, että sisältö on oikeassa muodossa | Validi `subreddit` | JSON sisältää odotetut kentät (_id, topics (`[{}]`)) |
+| 3 | Tarkista datan sisältö | Varmistaa, että sisältö on oikeassa muodossa | Validi `subreddit` | JSONin sisältö vastaa odotettua |
+
+<p align="right"><a href="#seminaarityö-flask-backendin-testausta">⬆️</a></p>
+
+### Käyttäjähallinta
+
+#### TC-13 - Rekisteröi uusi käyttäjä
+**Kuvaus**: Testaa `/api/authentication/register`-endpointia varmistaakseen, että **käyttäjän rekisteröinti toimii oikein** ja virheet käsitellään asianmukaisesti.<br>
+**Prioriteetti**: Korkea
+
+| # | Testivaihe | Tavoite | Syöte tai parametri | Odotettu tulos |
+|---|------------|---------|---------------------|----------------|
+| 1 | Rekisteröidy kelvollisilla tiedoilla | Varmistaa, että rekisteröinti onnistuu | Kelvollinen käyttäjätunnus, sähköposti, salasana | Status `201 Created`, käyttäjä löytyy tietokannasta |
+| 2 | Rekisteröidy olemassa olevalla käyttäjätunnuksella | Varmistaa, että päällekkäiset käyttäjätunnukset käsitellään | Olemassa oleva käyttäjätunnus, kelvollinen sähköposti, salasana | Status `400 Bad Request` |
+| 3 | Rekisteröidy olemassa olevalla sähköpostilla | Varmistaa, että päällekkäiset sähköpostit käsitellään | Kelvollinen käyttäjätunnus ja salasana, olemassa oleva sähköposti | Status `400 Bad Request` |
+| 4 | Rekisteröidy virheellisillä tiedoilla | Varmistaa, että validointi toimii | Virheellinen sähköpostimuoto, liian lyhyt salasana tms. | Status `400 Bad Request` |
+| 5 | Rekisteröidy puuttuvilla käyttäjätiedoilla | Varmistaa, että validointi toimii | Joku vaadittu tieto puuttuu, esim. email | Status `400 Bad Request`|
+
+#### TC-14 - Kirjaudu sisään käyttäjänä
+**Kuvaus**: Testaa `/api/authentication/login` -endpointia varmistaakseen, että **käyttäjän kirjautuminen toimii oikein** ja virheet käsitellään asianmukaisesti.<br>
+**Prioriteetti**: Korkea
+
+| # | Testivaihe | Tavoite | Syöte tai parametri | Odotettu tulos |
+|---|------------|---------|---------------------|----------------|
+| 1 | Kirjaudu sisään kelvollisilla tunnuksilla | Varmistaa, että kirjautuminen onnistuu | Kelvollinen käyttäjätunnus/sähköposti ja salasana | Status `200 OK`, token palautetaan |
+| 2 | Kirjaudu sisään virheellisellä salasanalla | Varmistaa, että virhe käsitellään | Kelvollinen käyttäjätunnus/sähköposti ja virheellinen salasana | Status `401 Unauthorized`, virheilmoitus |
+| 3 | Kirjaudu sisään olemattomalla käyttäjällä | Varmistaa, että virhe käsitellään | Virheellinen käyttäjätunnus/sähköposti ja salasana | Status `401 Unauthorized`, virheilmoitus |
 
 > [!NOTE]
-> Tässä kohtaa huomasin, että suunniteltuja testejä on jo merkittävä määrä (+40kpl) ja projektia on jäljellä 6 päivää. Jäljellä oleva aikataulu ei realistisesti mahdollista kaikkien testitapausten perusteellista suunnittelua ja toteutusta.
+> Tässä kohtaa huomasin, että suunniteltuja testejä on jo merkittävä määrä (+40kpl) ja projektia on jäljellä alle viikko. Jäljellä oleva aikataulu ei realistisesti mahdollista kaikkien testitapausten perusteellista suunnittelua ja toteutusta.
 >
 > Näen parhaaksi aloittaa tässä vaiheessa testien toteutuksen varmistaakseni, että kriittiset ja prioriteetiltaan tärkeimmät testit ehditään implementoida ennen projektin määräaikaa. Mikäli aikaa jää, palaan täydentämään puuttuvia testitapauksia.
 
 Suunnitellut testitapaukset:
-- **Käyttäjähallinta (autentikointi)**
-- **Käyttäjän lisäominaisuudet (vaatii kirjautumisen)**
+- **Käyttäjähallinta (autentikointi)** - käyttäjän poistaminen ja uloskirjautuminen, token refresh
+- **Käyttäjän lisäominaisuudet (vaatii kirjautumisen)** - tilaustoiminto
 
 <p align="right"><a href="#seminaarityö-flask-backendin-testausta">⬆️</a></p>
 
@@ -728,7 +743,7 @@ def test_hello(client):
 
 ## Testien toteutus
 
-Olen suunnitellut 13 testitapausta, ja jos jokainen testivaihe vastaa yhtä testiä, niin testejä on tulossa yli 40 kappaletta. En näe tarpeelliseksi eritellä jokaisen testin toteutusta yksityiskohtaisesti tässä työssä. Valitsen 2-3 testitapausta per testauksen osa-alue, ja selitän niiden ratkaisut tarkemmin. Kaikki toteutetut testit ovat kuitenkin nähtävissä projektin [tests](https://github.com/ohjelmistoprojekti-ii-reddit-app/reddit-app-backend/tree/testing/tests)-kansiossa.
+Olen suunnitellut 14 testitapausta, ja jos jokainen testivaihe vastaa yhtä testiä, niin testejä on tulossa yli 40 kappaletta. En näe tarpeelliseksi eritellä jokaisen testin toteutusta yksityiskohtaisesti tässä työssä. Valitsen 2-3 testitapausta per testauksen osa-alue, ja selitän niiden ratkaisut tarkemmin. Kaikki toteutetut testit ovat kuitenkin nähtävissä projektin [tests](https://github.com/ohjelmistoprojekti-ii-reddit-app/reddit-app-backend/tree/testing/tests)-kansiossa.
 
 <p align="right"><a href="#seminaarityö-flask-backendin-testausta">⬆️</a></p>
 
