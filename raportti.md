@@ -743,7 +743,419 @@ def test_hello(client):
 
 ## Testien toteutus
 
-Olen suunnitellut 14 testitapausta, ja jos jokainen testivaihe vastaa yhtä testiä, niin testejä on tulossa yli 40 kappaletta. En näe tarpeelliseksi eritellä jokaisen testin toteutusta yksityiskohtaisesti tässä työssä. Valitsen 2-3 testitapausta per testauksen osa-alue, ja selitän niiden ratkaisut tarkemmin. Kaikki toteutetut testit ovat kuitenkin nähtävissä projektin [tests](https://github.com/ohjelmistoprojekti-ii-reddit-app/reddit-app-backend/tree/testing/tests)-kansiossa.
+Toteutin testit järjestyksessä suunnittelemieni testitapausten pohjalta niin, että yksi määritelty testivaihe vastaa yhtä testiä. Testien toteutuksessa käytin mallina Flaskin [testaustutoriaalia](https://flask.palletsprojects.com/en/stable/tutorial/tests), vaikkakin soveltaa sai aika paljon. Integroin **Allure Report**in mukaan alusta asti, ja sen käytön ohjenuorana toimi Alluren [dokumentaatio](https://allurereport.org/docs/pytest/#writing-tests), erityisesti osio **pytest**in kanssa käytöstä.
+
+En ehtinyt suunnittelemaan testitapauksia kaikille backendin osa-alueille enkä täten myöskään testaamaan niitä, koska aika loppui kesken. Toteutin kuitenkin kaikki tässä työssä esitetyt [testitapaukset](#testitapaukset), ja ne kattavat sovelluksen kriittisimmät osat. Toteuttamatta jäi osa käyttäjähallintatesteistä sekä API-testit liittyen käyttäjän lisäominaisuuksiin (mm. tilaustoiminto).
+
+Toteutin yhteensä **49 testiä**, ja ne jakautuivat seuraavasti:
+| Osa-alue         | Testitapaukset | Testien lkm |
+| ---------------- | -------------- | ----------- |
+| Tietokanta       | TC-01 - TC-07  | 26          |
+| REST API         | TC-08 - TC-12  | 15          |
+| Käyttäjähallinta | TC-13 & TC-14  | 8           |
+
+En näe tarpeelliseksi eritellä jokaisen testin toteutusta yksityiskohtaisesti tässä työssä. Valitsen 2-3 testitapausta per osa-alue, ja selitän niiden ratkaisut tarkemmin. Kaikki toteutetut testit ovat kuitenkin nähtävissä projektin [tests](https://github.com/ohjelmistoprojekti-ii-reddit-app/reddit-app-backend/tree/testing/tests)-kansiossa.
+
+### Testien organisointi ja rakenne
+
+Testit on järjestetty eri kansioihin osa-alueiden mukaan: tietokantatestit `database`-kansioon ja API-testit `rest_api`-kansioon. Käyttäjähallinta sijaitsee API-kansiossa, koska sitä hallitaan tavallisestikin APIn kautta.
+
+Jokainen testiluokka vastaa yhtä testitapausta, ja Allure-annotaatiot on määritelty sekä luokka- että testitasolla. Tämä mahdollistaa testien järjestelmällisen tarkastelun Allure-raportin kautta, jossa testit näkyvät osa-alueittain, testitapauksittain ja kriittisyystason mukaan. Kuvaukset auttavat ymmärtämään, mistä testeissä on kyse.
+
+Jokainen testifunktio alkaa `test_`-etuliitteellä, jotta pytest tunnistaa ja suorittaa sen automaattisesti.
+
+*Esimerkki testien organisoinnista ja Allure-annotaatioista:*
+```python
+@allure.parent_suite("Database tests")
+@allure.suite("TC-01: Save data to database")
+@allure.severity(allure.severity_level.CRITICAL)
+class TestSaveDataToDatabase:
+    
+    @allure.sub_suite("Save one item")
+    @allure.description("Test saving a single document to the database, and verify it was saved correctly.")
+    def test_save_one_document(self, mock_db):
+        ...
+```
+
+### Esimerkkitestit
+
+Seuraavaksi esitellään muutama esimerkkitesti kustakin testauksen osa-alueesta havainnollistamaan toteutusta ja testien rakennetta.
+
+### Tietokantatestit
+
+Suurin osa tietokantatesteistä on yksinkertaisia yksikkötestejä. Pyrin varmistamaan, että testit testaavat vain yhtä asiaa kerralla ja että testidata on hallittua ja tiivistä. Testeissä hyödynnetään [Testiympäristön pystytys](#testiympäristön-pystytys) -osiossa luotua `mock_db`-fixturea, joka mahdollistaa testitietokannan käytön.
+
+### TC-02: Datan haku tietokannasta
+
+<details>
+    <summary><strong>Testattava funktio</strong></summary>
+
+Tarkastelun alla on yleiskäyttöinen hakufunktio, joka mahdollistaa dokumenttien haun kokoelmasta filtterin avulla tai ilman. Jos filtteriä ei ole annettu, funktio palauttaa kaikki kokoelman dokumentit.
+
+```python
+def fetch_data_from_collection(collection, filter=None):
+    if filter is not None and not isinstance(filter, dict):
+        raise TypeError("Parameter 'filter' must be a dictionary or None")
+    
+    client, db = connect_db()
+    try:
+        coll = db[collection]
+        data = list(coll.find(filter or {}))
+        if not data:
+            return []
+
+        for item in data:
+            item["_id"] = str(item["_id"])  # convert Mongo ObjectId to string
+        return data
+    except Exception as e:
+        raise ConnectionError(f"Database error: {e}")
+    finally:
+        client.close()
+```
+
+</details>
+
+● **Hae kaikki dokumentit:**
+
+Tämä testi varmistaa perustoiminnallisuuden: jos kokoelmalle **ei anneta** filtteriä, funktion tulee palauttaa **kaikki** dokumentit. Testissä luodaan kaksi testidokumenttia ja tarkistetaan, että ne palautuvat samassa muodossa kuin tallennettiin. Lisäksi varmistetaan, että palautettu arvo on listamuotoinen, kuten funktion määrittely edellyttää.
+
+```python
+@allure.sub_suite("Fetch all documents")
+@allure.description("Test fetching all documents from the database collection, and verify that the correct documents are returned as a list.")
+def test_fetch_all_documents(self, mock_db):
+    db = mock_db
+
+    test_data = [
+        { "title": "Test Post", "content": "This is a test post" },
+        { "title": "Another Post", "content": "This is another post"}
+    ]
+    collection = "test_collection"
+
+    db[collection].insert_many(test_data)
+    fetched_data = fetch_data_from_collection(collection)
+
+    assert isinstance(fetched_data, list)
+    assert len(fetched_data) == 2
+    assert fetched_data[0]["title"] == "Test Post"
+    assert fetched_data[1]["title"] == "Another Post"
+```
+
+● **Hae dokumenttia filtterin kanssa:**
+
+Tämä testi varmistaa, että funktio osaa rajata tulokset annetun **filtterin** perusteella. Testitietokantaan lisätään kaksi dokumenttia, joista vain toinen vastaa ehtoa.
+
+```python
+@allure.sub_suite("Fetch documents with filter")
+@allure.description("Test fetching documents with a filter, and verify that the correct documents are returned as a list.")
+def test_fetch_documents_using_filter(self, mock_db):
+    db = mock_db
+
+    test_data = [
+        { "title": "Test Post", "content": "This is a test post" },
+        { "title": "Another Post", "content": "This is another post"}
+    ]
+    collection = "test_collection"
+
+    db[collection].insert_many(test_data)
+    fetched_data = fetch_data_from_collection(collection, filter={"title": "Another Post"})
+
+    assert len(fetched_data) == 1
+    assert isinstance(fetched_data, list)
+    assert fetched_data[0]["title"] == "Another Post"
+```
+
+● **Hae dokumenttia, jota ei ole olemassa:**
+
+Tässä testissä tarkistetaan funktion käyttäytyminen tilanteessa, jossa mikään dokumentti **ei täytä** hakuehtoja. Odotettu tulos on tyhjä lista.
+
+```python
+@allure.sub_suite("Fetch non-existent document")
+@allure.description("Test fetching a document that doesn't exist, and verify that an empty list is returned.")
+def test_fetch_nonexistent_document(self, mock_db):
+    db = mock_db
+
+    test_data = [
+        { "title": "Test Post", "content": "This is a test post" },
+        { "title": "Another Post", "content": "This is another post"}
+    ]
+    collection = "test_collection"
+
+    db[collection].insert_many(test_data)
+    fetched_data = fetch_data_from_collection(collection, filter={"title": "Nonexistent"})
+
+    assert len(fetched_data) == 0
+    assert isinstance(fetched_data, list)
+```
+
+● **Hae dokumentit invalidin filtterin kanssa:**
+
+Testattava funktio odottaa, että filtteri olisi sanakirja (`dict`). Tässä testissä varmistetaan virheenkäsittely tilanteessa, jossa käytetään **väärän tyyppistä** filtteriä.
+
+```python
+@allure.sub_suite("Fetch with invalid filter")
+@allure.description("Test fetching documents with invalid filter, and verify that a TypeError is raised.")
+def test_fetch_documents_with_invalid_filter_type(self, mock_db):
+    collection = "test_collection"
+
+    with pytest.raises(TypeError):
+        fetch_data_from_collection(collection, filter="Invalid filter")
+```
+
+### TC-06: Postausmäärien laskeminen valitulla aikavälillä
+
+<details>
+    <summary><strong>Testattava funktio</strong></summary>
+
+Tarkastelun alla on funktio, joka käyttää `MongoDB`:n aggregaatiopipelinea postausmäärien tilastojen laskemiseen tietokantaan tallennetun datan pohjalta. Huomioitavaa on, että funktio käyttää kovakoodattua kokoelmaa `posts` ja laskee tilastot aina edellistä päivästä alkaen.
+
+```python
+def get_post_numbers_by_timeperiod(subreddit, number_of_days):
+    client, db = connect_db()
+    collection = db["posts"]
+
+    date_today = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+    min_date = date_today - timedelta(days=number_of_days)
+    max_date = date_today
+
+    # build aggregation pipeline
+    pipeline = [
+        # match with subreddit and timestamp >= min_date
+        {"$match": {
+            "subreddit": subreddit,
+            "timestamp": {"$gte": min_date, "$lt": max_date}
+        }},
+
+        # pass docs to next stage in the pipeline
+        {"$project": {
+            "num_posts": 1,
+            "day": {"$dateToString": {"format": "%Y-%m-%d", "date": "$timestamp"}}
+        }},
+
+        # group by day to get num_posts per day
+        {"$group": {
+            "_id": "$day",
+            "posts_per_day": {"$sum": "$num_posts"}
+        }},
+        {"$sort": {"_id": 1}},
+
+        #group by subreddit to push posts per day and total posts
+        {"$group": {
+            "_id": subreddit,
+            "total_posts": {"$sum": "$posts_per_day"},
+            "daily": {
+                "$push": {
+                    "day": "$_id",
+                    "posts": "$posts_per_day"
+                }
+            }
+        }},
+
+    ]
+
+    post_numbers = list(collection.aggregate(pipeline))
+    client.close()
+    
+    return post_numbers
+```
+</details>
+
+● **Laske postausmäärät validille subredditille:**
+
+Tämä testi varmistaa, että postausmäärät lasketaan oikein annetulla aikavälillä. Testidataa talletetaan **usean päivän** ajalta, jonka jälkeen varmistetaan, että kaikki postaukset ovat mukana laskuissa. Testi olettaa, että nykyisen päivän tilastot ovat mukana. Koska testattava funktio laskee tilastot aina `datetime.now` -aikamääreen pohjalta, hyödynsin samaa logiikkaa myös testissä.
+
+```python
+@allure.sub_suite("Calculate post numbers for existing subreddit")
+@allure.description("Test calculating post numbers for existing subreddit, and verify that the correct post count statistics are returned. Expects today's statistics to be included.")
+def test_calculate_post_numbers_for_existing_subreddit(self, mock_db):
+    db = mock_db
+
+    # Ensure test data includes today's date
+    current_date = datetime.now(timezone.utc)
+    test_data =[
+        { "subreddit": "example", "num_posts": 5, "timestamp": current_date },
+        { "subreddit": "example", "num_posts": 10, "timestamp": (current_date - timedelta(days=1)) },
+        { "subreddit": "example", "num_posts": 15, "timestamp": (current_date - timedelta(days=2)) },
+    ]
+
+    # Tested function uses hardcoded collection name "posts"
+    db["posts"].insert_many(test_data)
+
+    # High number_of_days to include all test data
+    number_of_days = 10
+    post_stats = get_post_numbers_by_timeperiod(subreddit="example", number_of_days=number_of_days)
+    assert isinstance(post_stats, list)
+    results = post_stats[0]
+
+    current_date_str = current_date.strftime("%Y-%m-%d")
+
+    current_date_found = False
+    for stat in results["daily"]:
+        if stat["day"] == current_date_str:
+            current_date_found = True
+            break
+
+    assert current_date_found # Verify that today's statistics are included
+    assert results["total_posts"] == 30 # 5 + 10 + 15
+```
+
+● **Laske postausmäärät subredditille, jota ei ole olemassa:**
+
+Tämä testi tallettaa ensin tietokantaan dataa subredditille `example`, ja yrittää sen jälkeen laskea tilastoja subredditille `nonexistent`. Tämän avulla varmistetaan, että virheellisen subredditin käyttö käsitellään asianmukaisesti, eli funktio palauttaa tyhjän listan.
+
+```python
+@allure.sub_suite("Calculate post numbers for nonexistent subreddit")
+@allure.description("Test calculating post numbers for nonexistent subreddit, and verify that an empty list is returned.")
+def test_calculate_post_numbers_for_nonexistent_subreddit(self, mock_db):
+    db = mock_db
+
+    current_date = datetime.now(timezone.utc)
+    test_data = [
+        { "subreddit": "example", "num_posts": 5, "timestamp": current_date },
+        { "subreddit": "example", "num_posts": 10, "timestamp": (current_date - timedelta(days=1)) },
+    ]
+
+    # Tested function uses hardcoded collection name "posts"
+    db["posts"].insert_many(test_data)
+
+    post_stats = get_post_numbers_by_timeperiod(subreddit="nonexistent", number_of_days=2)
+    assert isinstance(post_stats, list)
+    assert len(post_stats) == 0
+```
+
+● **Laske postausmäärät virheellisellä number_of_days -arvolla:**
+
+Testi varmistaa asianmukaisen virheenkäsittelyn ja tarkistaa, että virheellisen `number_of_days`-arvon käyttö nostaa `ValueError`-virheen.
+
+```python
+@allure.sub_suite("Calculate post numbers with invalid number of days")
+@allure.description("Test calculating post numbers with invalid number of days, and verify that a ValueError is raised.")
+def test_calculate_post_numbers_with_invalid_number_of_days(self, mock_db):
+    with pytest.raises(ValueError):
+        get_post_numbers_by_timeperiod(subreddit="example", number_of_days=-2)
+```
+
+### REST API -testit
+
+Valtaosa API-testeistä on integraatiotestejä, sillä useimmat endpointit ovat yhteydessä tietokantaan.
+
+### TC-09: Hae trendianalyysin tulokset
+
+<details>
+    <summary><strong>Testattavat funktiot</strong></summary>
+
+Tässä osiossa testataan `/topics/latest/<subreddit>` -endpointia sekä sen taustalla toimivaa tietokantafunktiota `get_latest_data_by_subreddit`. 
+
+Huomioi, että tietokantahaku ja sen toiminnallisuus on testattu erikseen tietokantatesteissä (katso TC-05).
+
+```python
+# Endpoint
+@topics_bp.route('/latest/<subreddit>', methods=['GET'])
+def get_latest_posts_from_db(subreddit):
+    data = get_latest_data_by_subreddit("posts", subreddit)
+
+    if not data:
+        return jsonify({"error": "No data found for this subreddit"}), 404
+    
+    return jsonify(data)
+
+# Tietokantahaku
+def get_latest_data_by_subreddit(collection, subreddit, type=None):
+    if type is not None and type not in ["posts", "topics"]:
+        raise ValueError("Parameter 'type' must be either 'posts', 'topics', or None")
+
+    client, db = connect_db()
+    
+    try:
+        coll = db[collection]
+        latest_entry = coll.find_one({"subreddit": subreddit}, sort=[("timestamp", DESCENDING)])
+
+        if not latest_entry:
+            return []
+
+        latest_timestamp = latest_entry["timestamp"]
+        query = {"subreddit": subreddit, "timestamp": latest_timestamp}
+        if type:
+            query["type"] = type
+
+        data = list(coll.find(query))
+
+        for post in data:
+            post["_id"] = str(post["_id"])  # convert Mongo ObjectId to string
+
+        if data and 'topic_id' in data[0]:
+            return sorted(data, key=lambda k: k['topic_id'])
+        return data
+    finally:
+        client.close()
+```
+
+</details>
+
+```python
+@allure.sub_suite("Fetch topic analysis results with valid subreddit")
+@allure.description("Test fetching latest topic analysis results with valid parameters, and verify the response includes correct data with latest timestamp.")
+def test_fetch_topic_analysis_results_valid_params(self, client, mock_db):
+    db = mock_db
+
+    subreddit = "test"
+    # Tested function uses 'posts' collection
+    db["posts"].insert_many([
+        {"subreddit": subreddit, "topic": "A", "timestamp": datetime(2025, 9, 1, 12, 0, tzinfo=timezone.utc)},
+        {"subreddit": subreddit, "topic": "B", "timestamp": datetime(2025, 9, 1, 9, 0, tzinfo=timezone.utc)}
+    ])
+
+    response = client.get(f'/api/topics/latest/{subreddit}')
+    assert response.status_code == 200
+
+    data = response.get_json()
+    assert isinstance(data, list)
+    assert len(data) == 1
+    assert data[0]['topic'] == 'A' # Latest topic
+
+
+@allure.sub_suite("Fetch topic analysis results with invalid subreddit")
+@allure.description("Test fetching latest topic analysis results with invalid parameters, and verify that status 404 is returned.")
+def test_fetch_topic_analysis_results_invalid_params(self, client, mock_db):
+    db = mock_db
+
+    # Tested function uses 'posts' collection
+    db["posts"].insert_many([
+        {"subreddit": "test", "topic": "A", "timestamp": datetime(2025, 9, 1, 12, 0, tzinfo=timezone.utc)},
+        {"subreddit": "test", "topic": "B", "timestamp": datetime(2025, 9, 1, 9, 0, tzinfo=timezone.utc)}
+    ])
+
+    subreddit = "nonexistent"
+    response = client.get(f'/api/topics/latest/{subreddit}')
+    assert response.status_code == 404
+
+    data = response.get_json()
+    assert 'error' in data
+
+
+@allure.sub_suite("Fetch topic analysis results and verify response content")
+@allure.description("Test fetching latest topic analysis results and verify that response contains expected fields.")
+def test_verify_topic_analysis_response_content(self, client, mock_db):
+    db = mock_db
+
+    subreddit = "test"
+    # Tested function uses 'posts' collection
+    db["posts"].insert_many([
+        {"subreddit": subreddit, "topic": "A", "timestamp": datetime(2025, 9, 1, 15, 0, tzinfo=timezone.utc)},
+        {"subreddit": subreddit, "topic": "B", "timestamp": datetime(2025, 9, 1, 10, 0, tzinfo=timezone.utc)}
+    ])
+
+    response = client.get(f'/api/topics/latest/{subreddit}')
+    assert response.status_code == 200
+
+    data = response.get_json()
+    assert isinstance(data, list)
+    assert len(data) == 1
+    
+    expected_fields = ["subreddit", "topic", "timestamp"]
+    for field in expected_fields:
+        assert field in data[0].keys()
+```
+
 
 <p align="right"><a href="#seminaarityö-flask-backendin-testausta">⬆️</a></p>
 
