@@ -12,7 +12,11 @@ Tässä seminaarityössä tutustun Flask-backendin testaukseen osana Ohjelmistop
 - [Testauksen työkalut](#testauksen-työkalut)
 - [Testiympäristön pystytys](#testiympäristön-pystytys)
 - [Testien toteutus](#testien-toteutus)
+- [Testitulosten analysointi](#testitulosten-analysointi)
 - [GitHub Actions -integraatio](#github-actions--integraatio)
+- [Mitä opin](#mitä-opin)
+- [Mitä tekisin toisin](#mitä-tekisin-toisin)
+- [Loppusanat](#loppusanat)
 - [Liitteet](#liitteet)
 - [Lähteet](#lähteet)
 - [Tekoälyn käyttö](#tekoälyn-käyttö-työn-toteutuksessa)
@@ -1354,11 +1358,11 @@ def test_register_user_with_missing_fields(self, client):
 
 ### Pohdintaa toteutusvaiheesta
 
-Testien toteutus eteni melko saumattomasti, kiitos kattavan testaussuunnitelman ja pytestin yksinkertaisen syntaksin. Syntaksi tuli nopeasti tutuksi ensimmäisten testien kirjoittamisen jälkeen, ja suurimman osan ajasta selvisin ilman ohjeiden tai esimerkkien katsomista.
+Testien toteutus eteni melko saumattomasti, kiitos kattavan testaussuunnitelman ja **pytest**in yksinkertaisen syntaksin. Syntaksi tuli nopeasti tutuksi ensimmäisten testien kirjoittamisen jälkeen, ja suurimman osan ajasta selvisin ilman ohjeiden tai esimerkkien katsomista.
 
 Yksi haastavimmista kohdista oli fixturejen käyttöönotto ja tietokannan mockaaminen. **Mongomock**in dokumentaatio oli vähäistä, ja projektin repositoriossa oli vain yksi pieni esimerkki. Flaskin tutoriaalit käyttivät eri tietokantaa ja testitietokannan luominen tapahtui eri tavalla. En halunnut jättää testitietokannan luomista kokeilujen varaan, etten vahingossa käyttäisi oikeaa tietokantaa, joten tukeuduin hieman tekoälyn apuun. Alkujärkytyksen jälkeen tietokannan mockaaminen osoittautui kuitenkin varsin yksinkertaiseksi: yksi pieni fixture korvasi tietokannan `env`-muuttujan ja clientin Mongomock-instanssilla. Fixturejen käyttö oli loppujen lopuksi mukavaa ja helppoa, sillä ne tarvitsi vain syöttää testifunktiolle parametreina, ja ne huolehtivat automaattisesti tarvittavasta alustuksesta ja siivouksesta taustalla.
 
-Allure Reportin käyttöönotto vaati lisätyötä erilaisten asennusten, lokaalin testailun ja testikuvausten kirjoittamisen vuoksi. Lopputulos kuitenkin palkitsi vaivan, sillä testituloksia oli paljon mielekkäämpää tarkastella visuaalisesta raportista kuin terminaalista.
+**Allure Report**in käyttöönotto vaati lisätyötä erilaisten asennusten, lokaalin testailun ja testikuvausten kirjoittamisen vuoksi. Lopputulos kuitenkin palkitsi vaivan, sillä testituloksia oli paljon mielekkäämpää tarkastella visuaalisesta raportista kuin terminaalista.
 
 <p align="right"><a href="#seminaarityö-flask-backendin-testausta">⬆️</a></p>
 
@@ -1377,18 +1381,17 @@ Testitulokset ovat "raakoja" eli en ole tehnyt sovellukseen mitään refaktoroin
 
 Mielenkiintoista kyllä, kaikki epäonnistuneet testit liittyvät samaan osa-alueeseen - **tietokantaan**. Tarkastellaan seuraavaksi tuloksia tarkemmin, jotta voidaan selvittää, mistä virheet johtuvat.
 
-#### 🚩 Virheilmoitus ei vastaa odotettua
+### 🚩 Virheilmoitus ei vastaa odotettua
 
 ![Puutteellinen virheenkäsittely error](kuvat/yhteenveto-value-error.png)
 
 Tämä tulos liittyy testiin, jossa päivitetään olematonta dokumenttia tietokannassa. Funktio nostaa virheen, mutta se ei ole mitä testi odottaa. Kuvasta voi päätellä, että funktiossa on todennäköisesti sisäkkäiset `try/except`-lohkot, kun virheilmoitus on seuraava: "ConnectionError: Database error: Update failed: .." Testifunktio sen sijaan odottaa yksinkertaista `ValueError`ia. Sama virhe toistuu muutamassa funktiossa. 
 
-Tämän pohjalta voidaan vetää johtopäätös, että tietokantafunktioiden virheenkäsittelyä tulisi parantaa. Nykyinen toteutus voi olla harhaanjohtava, sillä olemattoman dokumentin päivitys nostaa `ConnectionError`in, vaikka ongelma ei liity tietokantayhteyteen. Selkeä ja yhdenmukainen virheenkäsittely tekisi virhjoo
-eilmoituksista helpommin tulkittavia ja parantaisi sovelluksen luotettavuutta.
+Tämän pohjalta voidaan vetää johtopäätös, että tietokantafunktioiden virheenkäsittelyä tulisi parantaa. Nykyinen toteutus voi olla harhaanjohtava, sillä olemattoman dokumentin päivitys nostaa `ConnectionError`in, vaikka ongelma ei liity tietokantayhteyteen. Selkeä ja yhdenmukainen virheenkäsittely tekisi virheilmoituksista helpommin tulkittavia ja parantaisi sovelluksen luotettavuutta.
 
 Tämä testitulos ei tullut minulle yllätyksenä, sillä olin aiemminkin pohtinut, onko virheenkäsittely tarpeeksi hyvällä tasolla.
 
-#### 🚩 Virhe viimeisimpien analyysitulosten haussa
+### 🚩 Virhe viimeisimpien analyysitulosten haussa
 
 ![Analyysitulosten hakemisen error](kuvat/yhteenveto-topics-error.png)
 
@@ -1442,7 +1445,7 @@ Ongelma ilmeni, koska funktio hakee ensin viimeisimmän dokumentin ilman type-su
 
 Testi paljasti loogisen virheen, joka ei liity tietokannan toimintaan sinänsä, mutta voi johtaa virheisiin tietyissä tilanteissa. Siirtämällä type-suodatus **ennen** viimeisimmän dokumentin (latest_entry) hakua voidaan varmistaa, että funktio palauttaa aina oikeat analyysitulokset riippumatta siitä, onko viimeisin timestamp eri analyysityypin dokumentille. Tämä parantaa sovelluksen luotettavuutta ja vähentää mahdollisia virhetilanteita.
 
-#### 🚩 Virheet tilastojen laskemisessa
+### 🚩 Virheet tilastojen laskemisessa
 
 Eniten virheitä nousi esiin funktioissa, jotka laskevat tilastoja tallennetun datan pohjalta aggregaatiopipelineja hyödyntäen. Yksi tällainen funktio esiteltiin Testien toteutus -osiossa, kohdassa [TC-06](#tc-06-postausmäärien-laskeminen-valitulla-aikavälillä).
 
@@ -1460,7 +1463,7 @@ Testitulokset toivat esiin sekä onnistumisia että kehityskohteita. Onnistumisp
 
 Muutamia merkittäviä virheitä havaittiin erityisesti virheenkäsittelyssä ja hakulogiikassa. Testit kuitenkin osoittavat, että perustoiminnot ovat vakaalla pohjalla. Korjaamalla virheenkäsittelyt sekä päiväraja- ja type-suodatuksen ongelmat sovelluksen luotettavuus ja käyttäjäkokemus paranevat merkittävästi.
 
-Suhteessa virheet vaikuttavat kuitenkin melko pieniltä ja helposti korjattavilta, joten kokonaisarvio sovelluksen tilasta on positiivinen.
+Suhteessa virheet vaikuttavat melko pieniltä ja helposti korjattavilta, joten kokonaisarvio sovelluksen tilasta on positiivinen.
 
 <p align="right"><a href="#seminaarityö-flask-backendin-testausta">⬆️</a></p>
 
@@ -1582,9 +1585,54 @@ Pienen selvittelyn jälkeen kävi ilmi, että virhe johtui *allure-report-action
 
 ➡️ [GitHub Pages](https://ohjelmistoprojekti-ii-reddit-app.github.io/reddit-app-backend)
 
+<p align="right"><a href="#seminaarityö-flask-backendin-testausta">⬆️</a></p>
+
+
+## Mitä opin
+
+Seminaarityö oli erittäin opettavainen kokemus ja tarjosi käytännön näkökulmaa backend-testauksen järjestelmälliseen toteutukseen. En ollut aiemmin käyttänyt pytestiä, Mongomockia tai Allure Reportia, eikä minulla ollut aiempaa kokemusta Python-sovellusten testaamisesta. Projekti oli ensimmäinen kerta, kun rakensin testauskokonaisuuden osaksi isompaa sovellusta ja suunnittelin testauksen systemaattisesti alusta asti.
+
+Yksi suurimmista opeista oli testauksen ajoituksen merkitys. Koska aloitin testauksen vasta projektin loppuvaiheessa, työmäärä paisui nopeasti ja tuntui toisinaan vaikealta hallita. Vaikka käytin työhön yli 30 tuntia, ehdin loppujen lopuksi testata vain osan backendistä. Tämä konkretisoi sen, miksi testaus kannattaa ottaa osaksi kehitystyötä mahdollisimman aikaisessa vaiheessa.
+
+Testauksen suunnittelu osoittautui vaivalloiseksi, mutta sen avulla toteutusvaihe sujui tehokkaasti ja hallitusti. Hyvin laadittu suunnitelma toi varmuutta ja auttoi keskittymään olennaiseen – tiesin, että olen testannut tärkeimmät skenaariot eikä tarvinnut jatkuvasti pohtia, onko kaikki katettu.
+
+Sain paljon kokemusta uusista työkaluista. Pytest osoittautui helppokäyttöiseksi ja selkeäksi, ja sen fixturet, `assert`-tarkistukset ja `pytest.raises`-rakenteet auttoivat rakentamaan toimivan testipohjan. Flask-backendin testaus fixturejen ja mockatun tietokannan avulla oli sujuvaa. Mongomock opetti hallitsemaan tietokantayhteyksiä turvallisesti, ja Allure Report teki testitulosten visualisoinnista selkeää ja havainnollista, erityisesti GitHub Pagesiin julkaistuna.
+
+Kaiken kaikkiaan projekti syvensi taitojani teknisesti ja prosessinomaisesti. Opin uusia työkaluja, ymmärsin testauksen käytännön merkityksen ja sain varmemman otteen backend-testauksesta. Seminaarityö antaa hyvän pohjan kehittyä suunnitelmallisemmaksi ja testausorientoituneemmaksi kehittäjäksi tulevaisuudessa.
 
 <p align="right"><a href="#seminaarityö-flask-backendin-testausta">⬆️</a></p>
 
+
+## Mitä tekisin toisin
+
+Valmiin projektin testaaminen osoittautui työlääksi ja aikaa vieväksi, ja vaikka käytin merkittävän määrän tunteja testaukseen, en ehtinyt testata koko backendia. Testauksen aloittaminen aikaisemmassa vaiheessa olisi jakanut työmäärän tasaisemmin ja mahdollistanut laajemman testikattavuuden. Jatkossa aion aloittaa testauksen heti projektin alkuvaiheessa.
+
+Pytestin edistyneempiä ominaisuuksia olisi voinut hyödyntää tehokkaammin. Nyt testaus keskittyi pääosin pytestin perustoimintoihin. Fixtureita olisi voinut hyödyntää enemmän, mikä olisi tehnyt testien kirjoittamisesta sujuvampaa ja järjestelmällisempää. Lisäksi olisi voinut tutustua esimerkiksi testien parametrisaatioon, sillä se olisi saattanut vähentää samantyyppisten testifunktioiden toisteisuutta.
+
+Allure-raportin käytössäkin olisi parannettavaa. Vaikka testit oli järjestetty raporttiin melko selkeästi, testien vaiheet ja virhetilanteiden kuvaukset olisivat voineet olla tarkempia. Tämä olisi helpottanut raportin lukemista, virheiden analysointia ja kokonaisuuden seuraamista tiimin kesken.
+
+Myös testaussuunnitelmaa voisi kehittää. Nyt keskityin testaamaan muutamaa sovelluksen osa-aluetta hyvin yksityiskohtaisesti, mutta jälkikäteen mietin, olisiko ollut hyödyllisempää sen sijaan testata kaikkea edes vähän. Tätä pitää vielä pohtia tulevia testaussuunnitelmia laatiessa.
+
+<p align="right"><a href="#seminaarityö-flask-backendin-testausta">⬆️</a></p>
+
+
+## Loppusanat
+
+Määrittelin [Johdannossa](#johdanto) seminaarityöni tavoitteet ja keskeiset osa-alueet. Katsotaan, miten hyvin sain ne täytettyä.
+
+| Tavoite | Status |
+| ------- | ------ |
+| Testauksen suunnittelu | ✅ Sain toteutettua kattavan testaussuunnitelman. |
+| Testien toteuttaminen | ✅ Toteutin testejä 14 testitapaukselle, yhteensä 49 kappaletta. |
+| Testitulosten visualisointi **Allure Report** -työkalulla | ✅ Raportti on julkaistu GitHub Pagesiin. |
+| Testitulosten analysointi ja hyödyntäminen ohjelmiston laadun arvioinnissa | ✅ Testitulosten arvioinnille oli oma osio. Kehityskohteita nousi esiin erityisesti tietokantafunktioissa, mutta kokonaisarvio oli positiivinen. | 
+| Testien automatisointi **GitHub Actions** -ympäristössä | ✅ Sekä testien ajaminen että raportin luominen ja julkaisu on automatisoitu. |
+
+Pääsin kaikkiin tavoitteisiini, vaikka en ehtinyt testata aivan koko backendia. Seminaarityö oli kunnianhimoinen, sillä testattava projekti oli laaja ja moni osa-alue vaati tarkkuutta. Työ antoi paljon konkreettisia oppeja testauksen menetelmistä ja työkaluista, ja se syvensi ymmärrystäni backend-testauksesta. Vaikka kaikki ei mennyt täydellisesti, työ tarjosi arvokkaita oppeja tuleviin projekteihin: seuraavassa projektissani tiedän aloittaa testauksen aikaisemmin, hyödyntää työkalujen edistyneempiä ominaisuuksia ja suunnitella testauksen vielä tehokkaammin.
+
+Työ oli hyödyllinen myös Reddit Analyzer -projektin kannalta. Testitulokset voidaan helposti jakaa tiimin kesken, mikä helpottaa kehityskohteiden ja onnistumisten arviointia. Testiraporttien avulla voidaan suunnitella refaktorointia ja parantaa projektin laatua järjestelmällisesti.
+
+<p align="right"><a href="#seminaarityö-flask-backendin-testausta">⬆️</a></p>
 
 ## Liitteet
 
@@ -1598,14 +1646,12 @@ Pienen selvittelyn jälkeen kävi ilmi, että virhe johtui *allure-report-action
 ➡️ https://www.youtube.com/watch?v=0HHo7ugsh8E
 
 ## Lähteet
-- https://flask.palletsprojects.com/en/stable/testing/
-- https://dev.to/reritom/unit-testing-pymongo-flask-applications-with-mongomock-and-patches-1m23
-- https://flask.palletsprojects.com/en/stable/tutorial/tests/
-- https://www.mongodb.com/docs/atlas/
-- https://docs.pytest.org/en/stable/
-- https://github.com/mongomock/mongomock
-- https://docs.github.com/en/actions
-- https://allurereport.org/docs/
+- Flaskin dokumentaatio:
+     - https://flask.palletsprojects.com/en/stable/testing/
+     - https://flask.palletsprojects.com/en/stable/tutorial/tests/
+- Pytestin dokumentaatio: https://docs.pytest.org/en/stable/
+- Mongomockin GitHub-sivu: https://github.com/mongomock/mongomock
+- Allure Reportin dokumentaatio: https://allurereport.org/docs/
 - Kasurinen, J. 2013. Ohjelmistotestauksen käsikirja. 1. painos. Docendo. Jyväskylä.
 
 
