@@ -2,7 +2,9 @@
 
 Tässä seminaarityössä tutustun Flask-backendin testaukseen osana Ohjelmistoprojekti 2 -kurssin projektiani ([Reddit Analyzer](https://github.com/ohjelmistoprojekti-ii-reddit-app)).
 
-**Sisällysluettelo**:
+<details>
+<summary><strong>Sisällysluettelo</strong></summary>
+    
 - [Johdanto](#johdanto)
 - [Testauksen perusteet](#testauksen-perusteet)
 - [Testaussuunnitelma](#testaussuunnitelma)
@@ -13,6 +15,13 @@ Tässä seminaarityössä tutustun Flask-backendin testaukseen osana Ohjelmistop
 - [GitHub Actions -integraatio](#github-actions--integraatio)
 - [Lähteet](#lähteet)
 - [Tekoälyn käyttö](#tekoälyn-käyttö-työn-toteutuksessa)
+    
+</details>
+
+
+🔍 Tarkastele testituloksia selaimessa: [GitHub Pages](https://ohjelmistoprojekti-ii-reddit-app.github.io/reddit-app-backend)<br>
+🎬 Katso videoesittely: --
+
 
 
 ## Johdanto
@@ -94,7 +103,7 @@ Seminaarityössä keskityn seuraaviin osa-alueisiin:
 2. Testien toteuttaminen
 3. Testitulosten visualisointi **Allure Report** -työkalulla
 4. Testitulosten analysointi ja hyödyntäminen ohjelmiston laadun arvioinnissa
-5. Testauksen automatisointi **GitHub Actions** -ympäristössä (jos aikaa jää)
+5. Testien automatisointi **GitHub Actions** -ympäristössä (jos aikaa jää)
 
 Näin työ toimii paitsi käytännön oppimiskokemuksena myös osana projektin laadunvarmistusta.
 
@@ -245,7 +254,7 @@ Reddit Analyzerin tietokanta sisältää seuraavat kokoelmat:
 
 | Kokoelma | Sisältö |
 | -------- | ------- |
-| `posts` | Sisältää trendi- ja sentimenttianalyysien tulokset valikoiduille subredditeille. (Data on järjestetty aihemallinnuksessa tunnistettujen aiheiden mukaan, joten selkeämpi kokoelman nimi voisi olla **topics**.) |
+| `posts`  | Sisältää trendi- ja sentimenttianalyysien tulokset valikoiduille subredditeille. (Data on järjestetty aihemallinnuksessa tunnistettujen aiheiden mukaan, joten selkeämpi kokoelman nimi voisi olla **topics**.) |
 | `countries` | Sisältää maakohtaisten subredditien analyysitulokset. Maakohtaisten subredditien analyysiin sisältyy postausten kääntäminen englanniksi (tarvittaessa) sekä postauskohtainen sentimenttianalyysi. |
 | `users` | Sisältää rekisteröityneiden käyttäjien tiedot. |
 | `subscriptions` | Sisältää käyttäjien tekemät subreddit-tilaukset ja mm. valitun analyysityypin. | 
@@ -293,9 +302,12 @@ Testauksen tulokset kootaan **Allure Report** -raporttiin, joka tarjoaa visuaali
 
 ## Testitapaukset
 
-Seuraavaksi kuvaan keskeiset testitapaukset, jotka pohjautuvat edellä esitettyyn testaussuunnitelmaan. Testitapaukset on ryhmitelty testattavien osa-alueiden mukaan (tietokanta, REST API, käyttäjähallinta). Tavoitteena on suunnitella testitapaukset niin, että ne on helppo jäljittää koodista ja Allure Report -raportista suunnitelmaan. 
+Seuraavaksi kuvaan keskeiset testitapaukset, jotka pohjautuvat edellä esitettyyn testaussuunnitelmaan. Testitapaukset on ryhmitelty testattavien osa-alueiden mukaan (tietokanta, REST API, käyttäjähallinta). Tavoitteena on suunnitella testitapaukset niin, että ne on helppo jäljittää koodista ja Allure Report -raportista suunnitelmaan.
 
 Koska vaatimusmäärittelymme on vajavaista eikä esimerkiksi hyväksymiskriteerejä ole määritelty, suunnittelen testitapauksia pääasiassa sen perusteella, mitä ajattelen sovelluksen toimintojen **kuuluvan** tehdä.
+
+- [Tietokantatestit](#tietokantatestit)
+- [REST API- ja käyttäjähallintatestit](#rest-api--ja-käyttäjähallintatestit)
 
 ### Tietokantatestit
 
@@ -347,8 +359,7 @@ Tietokantatestit tulevat olemaan yksikkötestejä. Tietokantamme data on moninai
 | 3 | Poista dokumentti virheellisellä filtterillä | Varmistaa, että virheenkäsittely toimii | Invalidi `filter`, esim. merkkijono | `TypeError` tai vastaava |
 
 
-> [!NOTE]
-> Seuraavia analyysituloksia käsitteleviä testejä varten täytyy luoda hieman yksityiskohtaisempi datasetti, joka sisältää erityyppisiä analyysituloksia ja timestampit.
+> HUOM! Seuraavia analyysituloksia käsitteleviä testejä varten täytyy luoda hieman yksityiskohtaisempi datasetti, joka sisältää erityyppisiä analyysituloksia sekä timestampit.
 >
 > Selkeyden vuoksi analyysituloksia käsittelevät testit kannattaa erotella perustoimintoja (kuten tallennus, päivitys) testaavista testeistä omiin tiedostoihinsa.
 
@@ -391,7 +402,6 @@ Tietokantatestit tulevat olemaan yksikkötestejä. Tietokantamme data on moninai
 | 5 | Hae virheellisellä `limit`-parametrilla | Ensure error handling works | Invalidi `limit`, esim. negatiivinen luku | `ValueError` tai vastaava |
 
 <p align="right"><a href="#seminaarityö-flask-backendin-testausta">⬆️</a></p>
-
 
 ### REST API- ja käyttäjähallintatestit
 
@@ -481,14 +491,15 @@ REST API -testit toteutetaan testausuunnitelman mukaisessa prioriteettijärjesty
 | 2 | Kirjaudu sisään virheellisellä salasanalla | Varmistaa, että virhe käsitellään | Kelvollinen käyttäjätunnus/sähköposti ja virheellinen salasana | Status `401 Unauthorized`, virheilmoitus |
 | 3 | Kirjaudu sisään olemattomalla käyttäjällä | Varmistaa, että virhe käsitellään | Virheellinen käyttäjätunnus/sähköposti ja salasana | Status `401 Unauthorized`, virheilmoitus |
 
-> [!NOTE]
-> Tässä kohtaa huomasin, että suunniteltuja testejä on jo merkittävä määrä (+40kpl) ja projektia on jäljellä alle viikko. Jäljellä oleva aikataulu ei realistisesti mahdollista kaikkien testitapausten perusteellista suunnittelua ja toteutusta.
->
-> Näen parhaaksi aloittaa tässä vaiheessa testien toteutuksen varmistaakseni, että kriittiset ja prioriteetiltaan tärkeimmät testit ehditään implementoida ennen projektin määräaikaa. Mikäli aikaa jää, palaan täydentämään puuttuvia testitapauksia.
+### Huomioitavaa
 
-Suunnitellut testitapaukset:
-- **Käyttäjähallinta (autentikointi)** - käyttäjän poistaminen ja uloskirjautuminen, token refresh
-- **Käyttäjän lisäominaisuudet (vaatii kirjautumisen)** - tilaustoiminto
+Kesken testitapausten suunnittelun ymmärsin, että jäljellä oleva aikataulu ei realistisesti riitä koko backendin kattavien testien perusteelliseen suunnitteluun ja toteutukseen. Kun sain 14 testitapausta määriteltyä, päätin aloittaa testien toteutuksen varmistaakseni, että kriittiset ja prioriteetiltaan tärkeimmät testit ehditään implementoida ennen projektin määräaikaa.
+
+Tämä ratkaisu on linjassa myös [testaussuunnitelman](#testaussuunnitelma) kanssa, jonka **Testaukset kriteerit** -osiossa on todettu, että testauksen suunnittelu tai toteutus voidaan keskeyttää, mikäli aika loppuu kesken.
+
+Puuttuvia testitapauksia voidaan mahdollisesti täydentää myöhemmin. Suunnittelematta on vielä:
+- **osa käyttäjähallinnan testeistä** / käyttäjän poistaminen ja uloskirjautuminen, token refresh
+- **käyttäjän lisäominaisuuksia koskevat testit** / tilaustoiminto
 
 <p align="right"><a href="#seminaarityö-flask-backendin-testausta">⬆️</a></p>
 
@@ -542,8 +553,6 @@ Lähteet:
 
 Allure Report on työkalu, jonka avulla voidaan esittää testitulokset visuaalisesti interaktiivisen HTML-sivun muodossa. Allure on yhteensopiva monien eri testikehysten, kuten **pytest**in, **Playwright**in ja **Jest**in, kanssa. Raportti näyttää testien statukset, virheet, poikkeukset ja suoritusajat. Testejä voidaan organisoida eri tasoihin tai kategorioihin, ja niille voidaan määritellä esimerkiksi otsikoita, kuvauksia ja kriittisyysaste (*severity*).
 
-> **Ohjeet Alluren käyttöönottoon löytyvät raportin osiosta [Testiympäristön pystytys](#1-allure-reportin-asennus).**
-
 Alluren [dokumentaatiosta](https://allurereport.org/docs/pytest/#writing-tests) löytyy koodiesimerkkejä Alluren käytöstä pytest-ympäristössä. Tämä esimerkki havainnollistaa hyvin, miten paljon erilaista metadataa testeille pystyy lisäämään: 
 ```python
 import allure
@@ -588,9 +597,7 @@ allure open allure-report
 
 **Historiatietojen seuraaminen Allurella**:
 
-Allure Reportin avulla voi seurata testitulosten [historiatietoja](https://allurereport.org/docs/history-and-retries), mutta se ei tapahdu automaattisesti. Allure ei säilytä aiempien testiajojen tuloksia, ellei niitä siirretä talteen. Ideaalitilanteessa siirron voisi automatisoida esimerkiksi GitHub Actionsin kautta, mutta minulla ei ole juuri nyt aikaa perehtyä siihen. Tässä siis ohjeet historiatietojen siirtämiseen käsin:
-
-> Poistot ja kopioinnit voi tehdä komentoriviltä alla olevien ohjeiden mukaan, mutta itse olen usein hoitanut ne suoraan VS Coden käyttöliittymässä, koska se on mielestäni kätevämpää.
+Allure Reportin avulla voi seurata testitulosten [historiatietoja](https://allurereport.org/docs/history-and-retries), mutta paikallisessa ajossa se ei tapahdu automaattisesti. Historiatiedot täytyy siirtää käsin:
 
 1. Luo raportti normaalisti:
 ```
@@ -600,10 +607,6 @@ allure generate allure-results --clean -o allure-report
 **Tarkista**, että `allure-report`-kansioon ilmestyi `history`-kansio.
 
 2. Poista `allure-results`-kansio, jotta uusi data ei sekoitu edellisten ajojen kanssa:
-```
-rm -r allure-results  # Linux/macOS
-del /s /q allure-results  # Windows
-```
 
 3. Aja testit uudelleen:
 ```
@@ -611,10 +614,6 @@ pytest --alluredir=allure-results
 ```
 
 4. Kopioi edellisen ajon historiatiedot `allure-report`-kansiosta `allure-results`-kansioon (**HUOM.** tämä on tehtävä ennen uuden Allure-raportin generointia, muuten edellisen ajon tiedot menetetään):
-```
-cp -r allure-report/history allure-results/history  # Linux/macOS
-xcopy /E /I allure-report\history allure-results\history  # Windows
-```
 
 5. Luo uusi raportti ja (halutessasi) avaa se selaimessa:
 ```
@@ -625,8 +624,7 @@ allure open allure-report
 
 > *HUOM*: Jos unohtaa kopioida historiatiedot jollakin ajokerralla, kyseisen ajon tiedot eivät tule mukaan seuraavaan raporttiin. Aiemmin siirretty historia säilyy, kunhan `history`-kansio kopioidaan `allure-results`-hakemistoon **ENNEN** uuden raportin generointia.
 
-*Ohjeet historiatietojen poistamiseen ja kopioimiseen komentoriviltä generoitu ChatGPT:n avulla*.
-
+Allure Reportin käyttö vaatii useita asennuksia ja on melko monivaiheista. Sen takia voi olla tarkoituksenmukaista **automatisoida** testien ajo ja raportin luominen. Esimerkiksi GitHub Actions -integraatioon löytyy kattavat ohjeet Alluren [dokumentaatiosta](https://allurereport.org/docs/integrations-github/). Integraation avulla pystyy automatisoimaan myös historiatietojen siirtämisen, mikä on kätevää. Toivon, että ehdin toteuttamaan integraation osana tätä työtä, koska se helpottaisi raportin luomista ja tarkastelua huomattavasti.
 
 Lähteet: 
 - [Tulosten visualisointi](https://allurereport.org/docs/visual-analytics/)
@@ -636,12 +634,14 @@ Lähteet:
 
 </details>
 
+**Ohjeet työkalujen käyttöönottoon** löytyvät erikseen raportin osiosta [Testiympäristön pystytys](#testiympäristön-pystytys).
+
 <p align="right"><a href="#seminaarityö-flask-backendin-testausta">⬆️</a></p>
 
 ## Testiympäristön pystytys
 
 ### 1. Allure Reportin asennus
-Jotta Allure Reportia voi käyttää projektissa, se täytyy ensin asentaa omalle koneelle. Tämä käy ilmi esim. Allure Reportin [GitHub-sivulta](https://github.com/allure-framework/allure2). Suoritetaan asennus Alluren ohjeiden mukaan Windowsille:
+Jotta Allure Reportia voi käyttää projektissa (lokaalisti), se täytyy ensin asentaa omalle koneelle. Tämä käy ilmi esim. Allure Reportin [GitHub-sivulta](https://github.com/allure-framework/allure2). Suoritetaan asennus Alluren ohjeiden mukaan Windowsille:
 1. Asennetaan [Scoop](https://scoop.sh/) (komentorivin asennusohjelma) PowerShellillä:
 ```
 Set-ExecutionPolicy RemoteSigned -scope CurrentUser
@@ -743,7 +743,9 @@ def test_hello(client):
 
 ## Testien toteutus
 
-Toteutin testit järjestyksessä suunnittelemieni testitapausten pohjalta niin, että yksi määritelty testivaihe vastaa yhtä testiä. Testien toteutuksessa käytin mallina Flaskin [testaustutoriaalia](https://flask.palletsprojects.com/en/stable/tutorial/tests), vaikkakin soveltaa sai aika paljon. Integroin **Allure Report**in mukaan alusta asti, ja sen käytön ohjenuorana toimi Alluren [dokumentaatio](https://allurereport.org/docs/pytest/#writing-tests), erityisesti osio **pytest**in kanssa käytöstä.
+Toteutin testit suunnittelemieni testitapausten mukaisessa järjestyksessä siten, että yksi määritelty testivaihe vastaa yhtä testiä. Testauksen lähestymistapana käytin testaussuunnitelmassa kuvattua menetelmää: **ensin testit, refaktorointi myöhemmin**. En siis refaktoroinut mitään kesken testien kirjoittamisen, vaikka osa testeistä ei mennyt läpi.
+
+Testien toteutuksessa käytin mallina Flaskin [testaustutoriaalia](https://flask.palletsprojects.com/en/stable/tutorial/tests), vaikkakin soveltaa sai aika paljon. Integroin **Allure Report**in mukaan alusta asti, ja sen käytön ohjenuorana toimi Alluren [dokumentaatio](https://allurereport.org/docs/pytest/#writing-tests), ja erityisesti osio **pytest**in kanssa käytöstä.
 
 En ehtinyt suunnittelemaan testitapauksia kaikille backendin osa-alueille enkä täten myöskään testaamaan niitä, koska aika loppui kesken. Toteutin kuitenkin kaikki tässä työssä esitetyt [testitapaukset](#testitapaukset), ja ne kattavat sovelluksen kriittisimmät osat. Toteuttamatta jäi osa käyttäjähallintatesteistä sekä API-testit liittyen käyttäjän lisäominaisuuksiin (mm. tilaustoiminto).
 
@@ -752,7 +754,7 @@ Toteutin yhteensä **49 testiä**, ja ne jakautuivat seuraavasti:
 | ---------------- | -------------- | ----------- |
 | Tietokanta       | TC-01 - TC-07  | 26          |
 | REST API         | TC-08 - TC-12  | 15          |
-| Käyttäjähallinta | TC-13 & TC-14  | 8           |
+| Käyttäjähallinta | TC-13 - TC-14  | 8           |
 
 En näe tarpeelliseksi eritellä jokaisen testin toteutusta yksityiskohtaisesti tässä työssä. Valitsen 2-3 testitapausta per osa-alue, ja selitän niiden ratkaisut tarkemmin. Kaikki toteutetut testit ovat kuitenkin nähtävissä projektin [tests](https://github.com/ohjelmistoprojekti-ii-reddit-app/reddit-app-backend/tree/testing/tests)-kansiossa.
 
@@ -1276,7 +1278,8 @@ Vaikka seurasin ohjeita tarkasti, Actions-prosessi ei mennyt ensimmäisellä ajo
 ![Actions virhe](kuvat/actions-virhe.png)
 
 Pienen selvittelyn jälkeen kävi ilmi, että virhe johtui *allure-report-action*in väärästä versiosta (`v1.7`). Tästä oli [issue](https://github.com/simple-elf/allure-report-action/issues/72) actionin repositoriossa. Vinkkien avulla päivitin version uusimpaan versioon (`v1.13`), julkaisu onnistui ja raporttia pääsi viimein tarkastelemaan suoraan selaimessa:
-- [GitHub Pages](https://ohjelmistoprojekti-ii-reddit-app.github.io/reddit-app-backend)
+
+➡️ [GitHub Pages](https://ohjelmistoprojekti-ii-reddit-app.github.io/reddit-app-backend)
 
 
 <p align="right"><a href="#seminaarityö-flask-backendin-testausta">⬆️</a></p>
