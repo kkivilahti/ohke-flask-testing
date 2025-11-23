@@ -2,7 +2,7 @@
 
 Tässä seminaarityössä tutustun Flask-backendin testaukseen osana Ohjelmistoprojekti 2 -kurssin projektiani ([Reddit Analyzer](https://github.com/ohjelmistoprojekti-ii-reddit-app)).
 
-<details>
+<details open>
 <summary><strong>Sisällysluettelo</strong></summary>
     
 - [Johdanto](#johdanto)
@@ -13,15 +13,13 @@ Tässä seminaarityössä tutustun Flask-backendin testaukseen osana Ohjelmistop
 - [Testiympäristön pystytys](#testiympäristön-pystytys)
 - [Testien toteutus](#testien-toteutus)
 - [GitHub Actions -integraatio](#github-actions--integraatio)
+- [Liitteet](#liitteet)
 - [Lähteet](#lähteet)
 - [Tekoälyn käyttö](#tekoälyn-käyttö-työn-toteutuksessa)
+
+> HUOM. Linkit lähdekoodeihin, testiraporttiin ja videoesittelyyn löytyvät [Liitteet](#liitteet)-osiosta.
     
 </details>
-
-
-🔍 Tarkastele testituloksia selaimessa: [GitHub Pages](https://ohjelmistoprojekti-ii-reddit-app.github.io/reddit-app-backend)<br>
-🎬 Katso videoesittely: --
-
 
 
 ## Johdanto
@@ -1354,9 +1352,117 @@ def test_register_user_with_missing_fields(self, client):
 
 </details>
 
+### Pohdintaa toteutusvaiheesta
+
+Testien toteutus eteni melko saumattomasti, kiitos kattavan testaussuunnitelman ja pytestin yksinkertaisen syntaksin. Syntaksi tuli nopeasti tutuksi ensimmäisten testien kirjoittamisen jälkeen, ja suurimman osan ajasta selvisin ilman ohjeiden tai esimerkkien katsomista.
+
+Yksi haastavimmista kohdista oli fixturejen käyttöönotto ja tietokannan mockaaminen. **Mongomock**in dokumentaatio oli vähäistä, ja projektin repositoriossa oli vain yksi pieni esimerkki. Flaskin tutoriaalit käyttivät eri tietokantaa ja testitietokannan luominen tapahtui eri tavalla. En halunnut jättää testitietokannan luomista kokeilujen varaan, etten vahingossa käyttäisi oikeaa tietokantaa, joten tukeuduin hieman tekoälyn apuun. Alkujärkytyksen jälkeen tietokannan mockaaminen osoittautui kuitenkin varsin yksinkertaiseksi: yksi pieni fixture korvasi tietokannan `env`-muuttujan ja clientin Mongomock-instanssilla. Fixturejen käyttö oli loppujen lopuksi mukavaa ja helppoa, sillä ne tarvitsi vain syöttää testifunktiolle parametreina, ja ne huolehtivat automaattisesti tarvittavasta alustuksesta ja siivouksesta taustalla.
+
+Allure Reportin käyttöönotto vaati lisätyötä erilaisten asennusten, lokaalin testailun ja testikuvausten kirjoittamisen vuoksi. Lopputulos kuitenkin palkitsi vaivan, sillä testituloksia oli paljon mielekkäämpää tarkastella visuaalisesta raportista kuin terminaalista.
+
 <p align="right"><a href="#seminaarityö-flask-backendin-testausta">⬆️</a></p>
 
 
+## Testitulosten analysointi
+
+![Testiraportti](kuvat/yhteenveto-raportti.png)
+
+Tarkastellaan testituloksia Allure-raportin pohjalta. Kuten näkyy, raportti sisältää kaikki toteutetut 49 testiä. Testien onnistumisprosentti on hieman yli 80%. 
+
+![Toteutetut testit](kuvat/yhteenveto-testit.png)
+
+Testiraportista pystyy kätevästi tarkastelemaan tuloksia eri kategorioiden mukaan. Testitapausten nimet näkyvät selkeästi. Valikosta klikkaamalla pääsee tarkastelemaan testitapausten alle kuuluvia testejä ja niiden tarkempia tuloksia. 
+
+Testitulokset ovat "raakoja" eli en ole tehnyt sovellukseen mitään refaktorointia testaamisen aloittamisen jälkeen. Tavoitteena oli tuottaa testiraportti, joka antaa selkeän käsityksen sekä backendin kehityskohteista että vahvuuksista, ja arvioida tulosten pohjalta sovelluksen laatua. Valitettavasti laatuarvio jää vain suuntaa-antavaksi, koska osa backendista jäi testaamatta emmekä voi tietää, minkälaisia ongelmia sieltä mahdollisesti nousisi. 
+
+Mielenkiintoista kyllä, kaikki epäonnistuneet testit liittyvät samaan osa-alueeseen - **tietokantaan**. Tarkastellaan seuraavaksi tuloksia tarkemmin, jotta voidaan selvittää, mistä virheet johtuvat.
+
+#### 🚩 Virheilmoitus ei vastaa odotettua
+
+![Puutteellinen virheenkäsittely error](kuvat/yhteenveto-value-error.png)
+
+Tämä tulos liittyy testiin, jossa päivitetään olematonta dokumenttia tietokannassa. Funktio nostaa virheen, mutta se ei ole mitä testi odottaa. Kuvasta voi päätellä, että funktiossa on todennäköisesti sisäkkäiset `try/except`-lohkot, kun virheilmoitus on seuraava: "ConnectionError: Database error: Update failed: .." Testifunktio sen sijaan odottaa yksinkertaista `ValueError`ia. Sama virhe toistuu muutamassa funktiossa. 
+
+Tämän pohjalta voidaan vetää johtopäätös, että tietokantafunktioiden virheenkäsittelyä tulisi parantaa. Nykyinen toteutus voi olla harhaanjohtava, sillä olemattoman dokumentin päivitys nostaa `ConnectionError`in, vaikka ongelma ei liity tietokantayhteyteen. Selkeä ja yhdenmukainen virheenkäsittely tekisi virhjoo
+eilmoituksista helpommin tulkittavia ja parantaisi sovelluksen luotettavuutta.
+
+Tämä testitulos ei tullut minulle yllätyksenä, sillä olin aiemminkin pohtinut, onko virheenkäsittely tarpeeksi hyvällä tasolla.
+
+#### 🚩 Virhe viimeisimpien analyysitulosten haussa
+
+![Analyysitulosten hakemisen error](kuvat/yhteenveto-topics-error.png)
+
+Tämä tulos sen sijaan tuli minulle yllätyksenä, sillä se koskee itse toteuttamaani funktiota ja toi esiin epäkohdan, joka minulta oli jäänyt huomaamatta.
+
+<details>
+    <summary><strong>Testattava funktio</strong></summary>
+
+```python
+def get_latest_data_by_subreddit(collection, subreddit, type=None):
+    if type is not None and type not in ["posts", "topics"]:
+        raise ValueError("Parameter 'type' must be either 'posts', 'topics', or None")
+
+    client, db = connect_db()
+    
+    try:
+        coll = db[collection]
+        latest_entry = coll.find_one({"subreddit": subreddit}, sort=[("timestamp", DESCENDING)])
+
+        if not latest_entry:
+            return []
+
+        latest_timestamp = latest_entry["timestamp"]
+        query = {"subreddit": subreddit, "timestamp": latest_timestamp}
+        if type:
+            query["type"] = type
+
+        data = list(coll.find(query))
+
+        for post in data:
+            post["_id"] = str(post["_id"])  # convert Mongo ObjectId to string
+
+        if data and 'topic_id' in data[0]:
+            return sorted(data, key=lambda k: k['topic_id'])
+        return data
+    finally:
+        client.close()
+```
+</details>
+
+Testissä funktiota kutsuttiin hakemaan viimeisimmät analyysitulokset subredditille tietyn `type`-arvon perusteella. `Type` kuvaa eri analyysityyppejä. Erityyppiset analyysitulokset on talletettu samaan kokoelmaan sekä sovelluksessa että testeissä. Testidata sisälsi dokumentteja samalla subredditilla, mutta eri analyysityypeillä:
+```python
+test_data = [
+        { "type": "topics", "label": "Topic A", "subreddit": "example", "timestamp": datetime(2025, 9, 1, 10, 0, tzinfo=timezone.utc) },
+        { "type": "topics", "label": "Topic B", "subreddit": "example", "timestamp": datetime(2025, 10, 1, 10, 0, tzinfo=timezone.utc) },
+        { "type": "posts", "posts": [{"title": "Example post"}], "subreddit": "example", "timestamp": datetime(2025, 11, 1, 10, 0, tzinfo=timezone.utc) },
+    ]
+```
+
+Ongelma ilmeni, koska funktio hakee ensin viimeisimmän dokumentin ilman type-suodatusta ja lisää type-ehdon vasta sen jälkeen. Jos viimeisin dokumentti kuuluu eri analyysityypille kuin haettava type, haku palauttaa tyhjän listan, vaikka kyseisen type-arvon dokumentteja olisi olemassa. Tämä koskee siis juuri testin kaltaista tilannetta, jossa kokoelma sisältää eri analyysityyppien dataa samasta subredditistä. Virhe oli jäänyt huomaamatta, koska olimme kokeilleet toiminnallisuutta ainoastaan eri subredditeillä, jolloin virhetilannetta ei tule.
+
+Testi paljasti loogisen virheen, joka ei liity tietokannan toimintaan sinänsä, mutta voi johtaa virheisiin tietyissä tilanteissa. Siirtämällä type-suodatus **ennen** viimeisimmän dokumentin (latest_entry) hakua voidaan varmistaa, että funktio palauttaa aina oikeat analyysitulokset riippumatta siitä, onko viimeisin timestamp eri analyysityypin dokumentille. Tämä parantaa sovelluksen luotettavuutta ja vähentää mahdollisia virhetilanteita.
+
+#### 🚩 Virheet tilastojen laskemisessa
+
+Eniten virheitä nousi esiin funktioissa, jotka laskevat tilastoja tallennetun datan pohjalta aggregaatiopipelineja hyödyntäen. Yksi tällainen funktio esiteltiin Testien toteutus -osiossa, kohdassa [TC-06](#tc-06-postausmäärien-laskeminen-valitulla-aikavälillä).
+
+![Tilastojen virhe](kuvat/yhteenveto-statistics-error.png)
+
+Tilastot lasketaan nykyisessä toteutuksessa aina edellisestä päivästä alkaen, mikä voi olla harhaanjohtavaa. Esimerkiksi käyttäjän näkökulmasta, kun haetaan tilastoja kolmen edellisen päivän ajalta, voisi odottaa, että myös kuluvan päivän tulokset sisältyvät mukaan. Suunnittelin tilastotestit niin, että kuluvan päivän tulokset olisivat mukana, minkä vuoksi suuri osa niistä epäonnistui.
+
+Lisäksi tilastojen laskemisessa oli puutteita virhetilanteiden käsittelyssä. Osa epäonnistuneista testeistä liittyi siihen, että funktio ei virhettä kun tilastoja haettiin esim. -3 päivän ajalta (eli virheellisellä arvolla).
+
+Tilastoja laskevia funktioita olisi siis hyvä päivittää. Päivämäärärajauksia tulisi selkiyttää niin, että se vastaisi paremmin käyttäjän odotuksia (kuluvan päivän tulokset sisältyvät mukaan). Lisäksi virhetilanteiden käsittelyä tulisi parantaa, jotta esimerkiksi negatiivisilla arvoilla haku aiheuttaa selvän poikkeuksen eikä johda vääriin tuloksiin. Näin funktio toimisi luotettavammin ja ennustettavammin eri käyttötilanteissa.
+
+### Yhteenveto testituloksista
+
+Testitulokset toivat esiin sekä onnistumisia että kehityskohteita. Onnistumisprosentti oli melko korkea, mikä kertoo, että suurin osa backendin perustoiminnoista toimii odotetusti.
+
+Muutamia merkittäviä virheitä havaittiin erityisesti virheenkäsittelyssä ja hakulogiikassa. Testit kuitenkin osoittavat, että perustoiminnot ovat vakaalla pohjalla. Korjaamalla virheenkäsittelyt sekä päiväraja- ja type-suodatuksen ongelmat sovelluksen luotettavuus ja käyttäjäkokemus paranevat merkittävästi.
+
+Suhteessa virheet vaikuttavat kuitenkin melko pieniltä ja helposti korjattavilta, joten kokonaisarvio sovelluksen tilasta on positiivinen.
+
+<p align="right"><a href="#seminaarityö-flask-backendin-testausta">⬆️</a></p>
 
 ## GitHub Actions -integraatio
 
@@ -1479,6 +1585,17 @@ Pienen selvittelyn jälkeen kävi ilmi, että virhe johtui *allure-report-action
 
 <p align="right"><a href="#seminaarityö-flask-backendin-testausta">⬆️</a></p>
 
+
+## Liitteet
+
+**Testien lähdekoodi:**<br>
+➡️ https://github.com/ohjelmistoprojekti-ii-reddit-app/reddit-app-backend/tree/testing/tests
+
+**Interaktiivinen testiraportti (Allure Report):**<br>
+➡️ https://ohjelmistoprojekti-ii-reddit-app.github.io/reddit-app-backend
+
+**Videoesittely:**<br>
+➡️ --
 
 ## Lähteet
 - https://flask.palletsprojects.com/en/stable/testing/
