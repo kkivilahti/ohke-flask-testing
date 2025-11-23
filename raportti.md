@@ -17,7 +17,7 @@ Tässä seminaarityössä tutustun Flask-backendin testaukseen osana Ohjelmistop
 - [Lähteet](#lähteet)
 - [Tekoälyn käyttö](#tekoälyn-käyttö-työn-toteutuksessa)
 
-> HUOM. Linkit lähdekoodeihin, testiraporttiin ja videoesittelyyn löytyvät [Liitteet](#liitteet)-osiosta.
+> **HUOM.** Linkit lähdekoodeihin, testiraporttiin ja videoesittelyyn löytyvät [Liitteet](#liitteet)-osiosta.
     
 </details>
 
@@ -1595,7 +1595,7 @@ Pienen selvittelyn jälkeen kävi ilmi, että virhe johtui *allure-report-action
 ➡️ https://ohjelmistoprojekti-ii-reddit-app.github.io/reddit-app-backend
 
 **Videoesittely:**<br>
-➡️ --
+➡️ https://www.youtube.com/watch?v=0HHo7ugsh8E
 
 ## Lähteet
 - https://flask.palletsprojects.com/en/stable/testing/
